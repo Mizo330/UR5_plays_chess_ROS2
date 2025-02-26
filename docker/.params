@@ -1,0 +1,6 @@
+container_name="ros2_ws_base"
+image_name="ros2_ws"
+image_tag="latest"
+src_folder="./../my_packages"
+vscode_folder="./../misc/.vscode"
+BUILD_TYPE=Debug 

@@ -1,0 +1,10 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "setup_env",
+            "type": "shell",
+            "command": ".vscode/create_env.sh"
+        }
+    ]
+}
