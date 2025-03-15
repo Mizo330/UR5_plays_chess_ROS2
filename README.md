@@ -1,10 +1,18 @@
-# Robot systems & cognitive robotics project
+# UR5 robot plays chess - ROS2 adaptation
 
 ### TODOS:
+- [ ] Make a world with chess scene
+- [ ] Make our own simple controller
+- [ ] Make estop
+- [ ] Find out the manipulator type and make a controller for it in ros2
+  - [ ] Get camera feed as well
+- [ ] Find a suitable image det. model for chess figures
+- [ ] Learn about Stockfish open-source chess engine
+- [ ] Test driver on real life robot (is type ur5 or ur5e?)
 
 **Project makers**
 - Márk **Bancsi**
-- Zsombor **Ménesi**
+- Zsombor **Ménes**
 - Xiang **Wang**
 - Bercel **Papp**
 
@@ -46,7 +54,7 @@ Follow the installation steps here:
 https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker
 
 
-## Running the code
+## Running the container
 
 Once you have installed Docker, simpli run these following scripts:
 
@@ -69,3 +77,23 @@ Once the container has been created, go to the **Docker** tap in vscode -> right
 
 Open the ros2_ws folder, that will be the workspace folder, where you can build.
 >[!IMPORTANT] Only colcon build in this folder to circumvent any issues!
+
+## Running the UR5 driver
+Once you are inside the container, you can start running drivers and writing you code.
+
+The full documentation about the UR driver and its packages can be found [here](https://docs.universal-robots.com/Universal_Robots_ROS2_Documentation/index.html).
+
+### Simulation
+
+To run the gazebo sim: 
+```bash
+ros2 launch ur_simulation_gz ur_sim_control.launch.py ur_type:=ur5e
+```
+Launch a simple test to see if everything works.
+```bash
+ros2 run ur_robot_driver example_move.py
+```
+This was copied from the documentation, for more in-depth info visit the documentation's [simulation section](https://docs.universal-robots.com/Universal_Robots_ROS2_Documentation/doc/ur_simulation_gz/ur_simulation_gz/doc/usage.html)
+
+### Real-life
+- TBD
