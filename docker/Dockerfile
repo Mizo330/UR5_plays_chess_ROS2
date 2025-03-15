@@ -85,6 +85,38 @@ RUN apt-get update && \
     jq \
     sshpass
 
+#install gazebo prerequisites
+USER root
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive\
+    apt-get install -y\
+    curl\
+    lsb-release\
+    gnupg
+
+#install gazebo
+USER root
+RUN curl https://packages.osrfoundation.org/gazebo.gpg --output /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg &&\
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/gazebo-stable.list > /dev/null &&\
+    apt-get update &&\
+    DEBIAN_FRONTEND=noninteractive\
+    apt-get install -y\
+    gz-harmonic \
+    ros-jazzy-ros-gz
+
+#Install UR driver
+USER root
+RUN apt-get update &&\
+    DEBIAN_FRONTEND=noninteractive\
+    apt-get install -y\
+    ros-jazzy-ur
+
+#Install ur gazebo simulation
+USER root
+RUN cd /home/appuser/ros2_ws &&\
+    git clone -b ros2 https://github.com/UniversalRobots/Universal_Robots_ROS2_GZ_Simulation.git src/ur_simulation_gz &&\
+    rosdep update && rosdep install --ignore-src --from-paths src -y
+
 COPY  --chown=appuser:appuser ./misc/.devcontainer/ /home/appuser/ros2_ws/.devcontainer/
 
 USER appuser
@@ -93,5 +125,17 @@ RUN bash /home/appuser/ros2_ws/.devcontainer/preinstall_vscode.sh $VSCODE_COMMIT
 
 COPY --chown=appuser:appuser ./my_packages /home/appuser/ros2_ws/src/my_packages
 
+#build the workspace
+USER appuser
+RUN cd /home/appuser/ros2_ws && \
+    source /opt/ros/jazzy/setup.bash && \
+    colcon build --symlink-install 
+
+
 RUN mkdir -p /home/appuser/ros2_ws/src/my_packages && \
     mkdir -p /home/appuser/ros2_ws/.vscode
+
+#make it that the setup.bash is sourced when a new terminal is opened
+USER appuser
+RUN echo "source /home/appuser/ros2_ws/install/setup.bash" >> /home/appuser/.bashrc
+
