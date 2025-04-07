@@ -1,14 +1,14 @@
-# UR5 robot plays chess - ROS2 adaptation
+# UR5E robot plays chess - ROS2 adaptation
 
 ### TODOS:
 - [ ] Make a world with chess scene
 - [ ] Make our own simple controller
-- [ ] Make estop
+- [ ] Make estop?
 - [ ] Find out the manipulator type and make a controller for it in ros2
-  - [ ] Get camera feed as well
+  - [ ] Get real and simulated camera feed as well
 - [ ] Find a suitable image det. model for chess figures
 - [ ] Learn about Stockfish open-source chess engine
-- [ ] Test driver on real life robot (is type ur5 or ur5e?)
+- [ ] Test driver on real life robot
 
 **Project makers**
 - Márk **Bancsi**
@@ -76,9 +76,10 @@ cd /docker
 Once the container has been created, go to the **Docker** tap in vscode -> right click the running container -> attach VSCode.
 
 Open the ros2_ws folder, that will be the workspace folder, where you can build.
->[!IMPORTANT] Only colcon build in this folder to circumvent any issues!
+>[!IMPORTANT] 
+> Only colcon build in this folder to circumvent any issues!
 
-## Running the UR5 driver
+## Running the UR driver
 Once you are inside the container, you can start running drivers and writing you code.
 
 The full documentation about the UR driver and its packages can be found [here](https://docs.universal-robots.com/Universal_Robots_ROS2_Documentation/index.html).
