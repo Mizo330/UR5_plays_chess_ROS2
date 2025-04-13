@@ -104,7 +104,22 @@ RUN curl https://packages.osrfoundation.org/gazebo.gpg --output /usr/share/keyri
     gz-harmonic \
     ros-jazzy-ros-gz
 
-#Install UR driver
+#Install moveit-jazzy and all stuff for the ur diver
+USER root
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive\
+    apt-get install -y\
+    ros-jazzy-ros2-control \
+    ros-jazzy-ros2-controllers \
+    ros-jazzy-control-msgs \
+    ros-jazzy-control-toolbox \
+    ros-jazzy-realtime-tools \
+    ros-jazzy-moveit \
+    ros-jazzy-moveit-msgs \
+    ros-jazzy-srdfdom
+
+#Install UR driver from source, using the gripper branch
+#Prerequisites
 USER root
 RUN apt-get update &&\
     DEBIAN_FRONTEND=noninteractive\
@@ -124,6 +139,9 @@ ARG VSCODE_COMMIT_HASH
 RUN bash /home/appuser/ros2_ws/.devcontainer/preinstall_vscode.sh $VSCODE_COMMIT_HASH /home/appuser/ros2_ws/.devcontainer/devcontainer.json
 
 COPY --chown=appuser:appuser ./my_packages /home/appuser/ros2_ws/src/my_packages
+
+USER root
+RUN chown -R appuser:appuser /home/appuser/ros2_ws/src
 
 #build the workspace
 USER appuser

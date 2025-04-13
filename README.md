@@ -56,7 +56,7 @@ https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.
 
 ## Running the container
 
-Once you have installed Docker, simpli run these following scripts:
+Once you have installed Docker, simply run these following scripts:
 
 ```bash
 cd /docker
@@ -70,8 +70,26 @@ cd /docker
 ./run_docker.sh
 ```
 
+If you don't have nvidai GPU on your system, remove the lines --gpus=all and --runtime nvidia from the run script, but bevare the simulation software will chug your pc.
+
+Sometimes Docker won't see the nvidia runtime, so we need to edit the docker daemon manually.
+```bash
+sudo nano /etc/docker/daemon.json
+```
+And include the following:
+```bash
+{
+  "runtimes": {
+    "nvidia": {
+      "path": "nvidia-container-runtime",
+      "runtimeArgs": []
+    }
+  },
+}
+```
+
 >[!TIP]
->If you run into any problems, feel free to ask or just open an issue
+>If you run into any other problems, feel free to ask or just open an issue
 
 Once the container has been created, go to the **Docker** tap in vscode -> right click the running container -> attach VSCode.
 
