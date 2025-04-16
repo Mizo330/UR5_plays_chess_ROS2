@@ -21,18 +21,21 @@ USER root
 
 #expect build-time argument
 ARG HOST_USER_GROUP_ARG
-#create group appuser with id 999
-#create group hostgroup with ID from host. This is needed so appuser can manipulate the host files without sudo.
-#create appuser user with id 999 with home; bash as shell; and in the appuser group
+#create group appuser with id 1001
+#add appuser to the group with the same id as the host user
+#this is important, because it allows to mount the host user home directory into the container
+#this way, the container will have the same permissions as the host user
+#create appuser user with id 1001 with home; bash as shell; and in the appuser group
 #change password of appuser to admin so that we can sudo inside the container
 #add appuser to sudo, hostgroup and all default groups
 #copy default bashrc and add ROS sourcing
-RUN groupadd -g 899 appuser && \
-    groupadd -g 900 hostgroup && \
-    useradd --create-home --shell /bin/bash -u 899 -g appuser appuser && \
-    echo 'appuser:admin' | chpasswd && \
-    usermod -aG sudo,hostgroup,plugdev,video,adm,cdrom,dip,dialout appuser && \
+RUN groupadd -g 1001 appuser && \
+    useradd --create-home --shell /bin/bash -u 1001 -g appuser appuser && \
+    echo 'appuser:admin' | chpasswd &&\
+    usermod -aG $HOST_USER_GROUP_ARG appuser &&\
+    usermod -aG sudo,plugdev,video,adm,cdrom,dip,dialout appuser && \
     cp /etc/skel/.bashrc /home/appuser/  
+
 
 ###Install the project
 #
@@ -138,10 +141,8 @@ USER appuser
 ARG VSCODE_COMMIT_HASH
 RUN bash /home/appuser/ros2_ws/.devcontainer/preinstall_vscode.sh $VSCODE_COMMIT_HASH /home/appuser/ros2_ws/.devcontainer/devcontainer.json
 
+USER appuser
 COPY --chown=appuser:appuser ./my_packages /home/appuser/ros2_ws/src/my_packages
-
-USER root
-RUN chown -R appuser:appuser /home/appuser/ros2_ws/src
 
 #build the workspace
 USER appuser
