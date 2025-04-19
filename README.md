@@ -2,12 +2,10 @@
 
 ### TODOS:
 - [ ] Make a world with chess scene
-- [ ] Make our own simple controller
+- [ ] Make moveit controller
 - [ ] Make estop?
-- [ ] Find out the manipulator type and make a controller for it in ros2
-  - [ ] Get real and simulated camera feed as well
-- [ ] Find a suitable image det. model for chess figures
-- [ ] Learn about Stockfish open-source chess engine
+- [ ] Setup driver and gazebo for the [RH-P12-RN-A](https://github.com/ROBOTIS-GIT/RH-P12-RN-A) gribber
+- [ ] Make Stockfish chess node
 - [ ] Test driver on real life robot
 
 **Project makers**
