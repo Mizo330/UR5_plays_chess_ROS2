@@ -14,15 +14,16 @@
 - Xiang **Wang**
 - Bercel **Papp**
 
-## Requisites
-- Docker
+## Pre-requisites
+- Ubuntu 24 (native or WSL)
 - Nvidia GPU with driver
 - VSCode
 
 ## Pre-Installation 
 
 >[!IMPORTANT]
->This project uses a docker enviroment to run ROS2 and any dependencies, so installation of Docker is required.
+>This project uses a docker enviroment to run ROS2 and any dependencies, so installation of Docker is strongly suggested.
+> *You can fish out the necessary pacakges for it to run from the Dockerfile of course...*
 
 ### Docker
 
