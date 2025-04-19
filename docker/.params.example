@@ -4,3 +4,4 @@ image_tag="latest"
 src_folder="./../my_packages"
 vscode_folder="./../misc/.vscode"
 BUILD_TYPE=Debug 
+ROS_DISTRO="jazzy"

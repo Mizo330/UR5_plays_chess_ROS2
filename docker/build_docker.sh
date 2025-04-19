@@ -23,4 +23,5 @@ docker build \
     --tag $image_name:$image_tag \
     --build-arg HOST_USER_GROUP_ARG=$HOST_USER_GROUP_ARG \
     --build-arg VSCODE_COMMIT_HASH=$VSCODE_COMMIT_HASH \
+    --build-arg ROS_DISTRO=$ROS_DISTRO \
     ./..\

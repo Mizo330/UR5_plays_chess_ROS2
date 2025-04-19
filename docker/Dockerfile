@@ -1,6 +1,8 @@
 ###Setup base
+#set dynamic distro arg name with default value
+ARG ROS_DISTRO=jazzy
 
-FROM osrf/ros:jazzy-desktop-full
+FROM osrf/ros:$ROS_DISTRO-desktop-full
 
 #this is a small but basic utility, missing from osrf/ros. It is not trivial to know that this is
 #missing when an error occurs, so I suggest installing it just to bes sure.
@@ -65,15 +67,14 @@ RUN apt-get update && \
 
 
 USER appuser
-
 #ros sourcing
-RUN echo "source /opt/ros/jazzy/setup.bash" >> /home/appuser/.bashrc
+RUN echo "source /opt/ros/$ROS_DISTRO/setup.bash" >> /home/appuser/.bashrc
 
 
 #make workspace directory
 RUN cd /home/appuser && \
     mkdir -p ros2_ws/src 
-    
+
 #install vscode server and extensions inside the container
 #it propably won't work on computers of others because of the specific vscode version
 #mostly stolen from here: https://gist.github.com/discrimy/6c21c10995f1914cf72cd8474d4501b2
@@ -105,21 +106,21 @@ RUN curl https://packages.osrfoundation.org/gazebo.gpg --output /usr/share/keyri
     DEBIAN_FRONTEND=noninteractive\
     apt-get install -y\
     gz-harmonic \
-    ros-jazzy-ros-gz
+    ros-$ROS_DISTRO-ros-gz
 
-#Install moveit-jazzy and all stuff for the ur diver
+#Install moveit-$ROS_DISTRO and all stuff for the ur diver
 USER root
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive\
     apt-get install -y\
-    ros-jazzy-ros2-control \
-    ros-jazzy-ros2-controllers \
-    ros-jazzy-control-msgs \
-    ros-jazzy-control-toolbox \
-    ros-jazzy-realtime-tools \
-    ros-jazzy-moveit \
-    ros-jazzy-moveit-msgs \
-    ros-jazzy-srdfdom
+    ros-$ROS_DISTRO-ros2-control \
+    ros-$ROS_DISTRO-ros2-controllers \
+    ros-$ROS_DISTRO-control-msgs \
+    ros-$ROS_DISTRO-control-toolbox \
+    ros-$ROS_DISTRO-realtime-tools \
+    ros-$ROS_DISTRO-moveit \
+    ros-$ROS_DISTRO-moveit-msgs \
+    ros-$ROS_DISTRO-srdfdom
 
 #Install UR driver from source, using the gripper branch
 #Prerequisites
@@ -127,7 +128,7 @@ USER root
 RUN apt-get update &&\
     DEBIAN_FRONTEND=noninteractive\
     apt-get install -y\
-    ros-jazzy-ur
+    ros-$ROS_DISTRO-ur
 
 #Install ur gazebo simulation
 USER root
@@ -147,7 +148,7 @@ COPY --chown=appuser:appuser ./my_packages /home/appuser/ros2_ws/src/my_packages
 #build the workspace
 USER appuser
 RUN cd /home/appuser/ros2_ws && \
-    source /opt/ros/jazzy/setup.bash && \
+    source /opt/ros/$ROS_DISTRO/setup.bash && \
     colcon build --symlink-install 
 
 
