@@ -3,7 +3,7 @@ from glob import glob
 from setuptools import find_packages, setup
 
 
-package_name = 'urchess_control'
+package_name = 'ur_chess'
 
 setup(
     name=package_name,
@@ -16,8 +16,7 @@ setup(
          # Include all launch files.
         (os.path.join('share', package_name, 'launch'), glob(os.path.join('launch', '*launch.[pxy][yma]*'))),
     ],
-
-    install_requires=['setuptools'],
+    install_requires=['setuptools','ur_chess_msgs'],
     zip_safe=True,
     maintainer='appuser',
     maintainer_email='bancsimark02@gmail.com',
@@ -26,7 +25,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            "urchess_control = urchess_control.urchess_control:main",
+            'move_controller = ur_chess.move_controller:main',
+            'game_manager = ur_chess.game_manager:main',
         ],
     },
 )

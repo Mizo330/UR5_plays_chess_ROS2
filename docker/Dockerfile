@@ -134,7 +134,7 @@ RUN cd /home/appuser/ros2_ws/src &&\
 USER appuser
 RUN cd /home/appuser/ros2_ws && \
     source /opt/ros/$ROS_DISTRO/setup.bash && \
-    MAKEFLAGS=-j4 colcon build --executor sequential --symlink-install
+    MAKEFLAGS=-j8 colcon build --parallel-workers 2 --symlink-install
 
 #Install stuff for the ur diver
 USER root

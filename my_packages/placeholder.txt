@@ -1,2 +1,0 @@
-This is just a placeholder file so that this folder can be pushed!
-This folder shall be the place for all packages we create.
