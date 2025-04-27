@@ -1,64 +1,185 @@
 import rclpy
 import asyncio
 from rclpy.executors import MultiThreadedExecutor
+import rclpy.executors
 from rclpy.node import Node
 from rclpy.action import ActionClient
-from moveit_msgs.action import MoveGroup
+from moveit_msgs.action import MoveGroup, MoveGroupSequence
 from moveit_msgs.action._move_group import MoveGroup_FeedbackMessage
-from moveit_msgs.msg import MotionPlanRequest, Constraints, PositionConstraint, OrientationConstraint, WorkspaceParameters, JointConstraint
+from moveit_msgs.msg import MotionPlanRequest, Constraints, PositionConstraint, OrientationConstraint, WorkspaceParameters, JointConstraint, MoveItErrorCodes, MotionSequenceItem
 from geometry_msgs.msg import PoseStamped, Quaternion
+from sensor_msgs.msg import JointState
 from shape_msgs.msg import SolidPrimitive
 from ur_chess.misc.math_helpers import make_vector3, make_quaternion, make_point
-from ur_chess_msgs.srv import URChessMoveToPosition
+from ur_chess_msgs.srv import URChessMovePiece
 import math
 import yaml
 import os
 from typing import Optional
+from rclpy.callback_groups import ReentrantCallbackGroup
+from rclpy.duration import Duration
+from action_msgs.msg import GoalStatus
+import time
+
 
 WORKSPACE_MIN_CORNER = make_vector3(x=-1.0, y=-1.0, z=-1.0)
 WORKSPACE_MAX_CORNER = make_vector3(x=1.0, y=1.0, z=1.0)
+
+CHESSPIECE_CLEARANCE = 0.2  # Clearance above the chess piece
 
 class MoveItCommander(Node):
 
     def __init__(self):
         super().__init__('moveit_goal_sender')
 
+        # Declare and load the constraints file parameter
         self.declare_parameter('constraints_file', '/home/appuser/ros2_ws/src/my_packages/ur_chess/config/planning_constaints.yaml')
         self.constraints_file = self.get_parameter('constraints_file').get_parameter_value().string_value
 
         self.constraints_yaml = self.load_constraints_from_yaml()
+
+        # Create ActionClient and wait for the server
         self._action_client = ActionClient(self, MoveGroup, 'move_action')
         self._action_client.wait_for_server()
         self.get_logger().info('MoveGroup action server is available.')
 
-        success = self.send_to_start()
-        if success:
-            self.get_logger().info('Successfully moved to start position.')
-        else:
-            self.get_logger().error('Failed to move to start position.')
-        
-        self.create_service(URChessMoveToPosition, 'ur_chess/move_to_position', self.move_to_position_callback)
-        self.get_logger().info('Service ur_chess/move_to_position is ready.')
-                
+        # Create a service
+        self.create_service(URChessMovePiece, 'ur_chess/move_piece', self.move_piece_callback)
+        self.get_logger().info('Service ur_chess/move_piece is ready.')
+
+        # Use ReentrantCallbackGroup for managing callbacks concurrently
+        self._callback_group = ReentrantCallbackGroup()
+        self._goal_queue = []   
+        self._active_goal = None
+
     def load_constraints_from_yaml(self):
         if not os.path.isfile(self.constraints_file):
             self.get_logger().error(f"Constraints file not found: {self.constraints_file}")
             return {}
         with open(self.constraints_file, 'r') as f:
             return yaml.safe_load(f)
+        
+    def enqueue_goal(self, goal_msg, on_result_cb=None):
+        """Add a goal to the queue. on_result_cb is called with the result."""
+        self._goal_queue.append((goal_msg, on_result_cb))
+        # if nothing is active right now, start the first one
+        if self._active_goal is None:
+            self._send_next()
+
+    def _send_next(self):
+        if not self._goal_queue:
+            self.get_logger().info('All goals completed.')
+            return
+
+        goal_msg, on_result_cb = self._goal_queue.pop(0)
+        self.get_logger().info(f'Sending next goal')
+        send_future = self._action_client.send_goal_async(goal_msg)
+        send_future.add_done_callback(
+            lambda fut: self._on_goal_response(fut, on_result_cb)
+        )
+        # mark that a goal is pending acceptance
+        self._active_goal = send_future
     
-    def move_to_position_callback(self, request, response):
-        pose = PoseStamped()
-        pose.header.frame_id = 'base_link'
-        pose.pose.position = make_point(request.x, request.y, request.z)
-        pose.pose.orientation = make_quaternion(0.0, -1.0, 0.0, 0.0)
+    def _on_goal_response(self, future, on_result_cb):
+        goal_handle = future.result()
+        if not goal_handle.accepted:
+            self.get_logger().error('Goal rejected')
+            self._active_goal = None
+            self._send_next()
+            return
 
-        goal_msg = self.create_movegroup_goal(pose)
-        success = self.send_goal(goal_msg)
+        # now wait for completion
+        result_future = goal_handle.get_result_async()  # async result :contentReference[oaicite:2]{index=2}
+        result_future.add_done_callback(
+            lambda f: self._on_result(f, on_result_cb)
+        )
+        # store the actual goal handle to block further sends until done
+        self._active_goal = goal_handle
+        
+    def _on_result(self, future, on_result_cb):
+        result: MoveGroup.Result = future.result().result
+        status = future.result().status
 
-        response.success = success
+        if status == GoalStatus.STATUS_SUCCEEDED:
+            self.get_logger().info(f'Goal succeeded: {result.error_code}')
+        else:
+            self.get_logger().warn(f'Goal failed with status: {status}')
+            self.get_logger().warn(f'Error code: {result.error_code}')
+        
+        # call user‐provided callback if any
+        if on_result_cb:
+            try:
+                on_result_cb(result, status)
+            except Exception as e:
+                self.get_logger().error(f'Callback throw: {e}')
+
+        # clear active and send the next in queue
+        self._active_goal = None
+        time.sleep(2)
+        self._send_next()
+        
+    def move_piece_callback(self, request:URChessMovePiece.Request, response):
+        """Callback for the move_piece service."""
+        self.get_logger().info('Received request to move to position')
+        start_x = request.start_x
+        start_y = request.start_y
+        start_z = request.start_z
+        end_x = request.end_x
+        end_y = request.end_y
+        end_z = request.end_z
+        
+        #Above the start piece
+        goal1 = self.create_mg_from_point(start_x, start_y, start_z+CHESSPIECE_CLEARANCE)
+        #At the start piece
+        goal2 = self.create_mg_from_point(start_x, start_y, start_z)
+        #Above the end piece
+        goal3 = self.create_mg_from_point(end_x, end_y, end_z+CHESSPIECE_CLEARANCE)
+        #At the end piece
+        goal4 = self.create_mg_from_point(end_x, end_y, end_z)
+        # Queue the goals
+        self.enqueue_goal(goal1)
+        self.enqueue_goal(goal2)
+        #Move up again
+        self.enqueue_goal(goal1)
+        #Move to the end position
+        self.enqueue_goal(goal3)
+        #Move down to the end position
+        self.enqueue_goal(goal4)
+        # Move back up 
+        self.enqueue_goal(goal3)
+        
+        response.success = True  # or False based on your logic
         return response
 
+    def create_mg_from_point(self,x, y, z):
+        """Create a MoveGroup goal from a point."""
+        pose = PoseStamped()
+        pose.header.frame_id = 'base_link'
+        pose.pose.position = make_point(x, y, z)
+        pose.pose.orientation = make_quaternion(0.0, -1.0, 0.0, 0.0)
+        goal_msg = self.create_movegroup_goal(pose)
+        return goal_msg
+        
+        # if result.error_code.val == MoveItErrorCodes.SUCCESS:
+        #     self.get_logger().info('Goal execution was successful!')
+        #     self._goal_success = True
+        # elif result.error_code.val == MoveItErrorCodes.FAILURE:
+        #     self.get_logger().error('Goal execution failed.')
+        #     self._goal_success = False
+        # elif result.error_code.val == MoveItErrorCodes.PLANNING_FAILED:
+        #     self.get_logger().error('Planning failed.')
+        #     self._goal_success = False
+        # elif result.error_code.val == MoveItErrorCodes.TIMED_OUT:
+        #     self.get_logger().error('Goal execution timed out.')
+        #     self._goal_success = False
+        # elif result.error_code.val == MoveItErrorCodes.ABORT:
+        #     self.get_logger().error('Goal execution was aborted.')
+        #     self._goal_success = False
+        # else:
+        #     self.get_logger().error(f'Goal execution failed with error code: {result.error_code}')
+        #     self._goal_success = False
+        
+    
     def build_constraints(self, pose: PoseStamped) -> Constraints:
         data = self.constraints_yaml
         constraints = Constraints()
@@ -107,64 +228,31 @@ class MoveItCommander(Node):
         goal_msg.request.group_name = 'ur_manipulator'
         goal_msg.request.workspace_parameters.min_corner = WORKSPACE_MIN_CORNER
         goal_msg.request.workspace_parameters.max_corner = WORKSPACE_MAX_CORNER
-
+        goal_msg.request.num_planning_attempts = 5
+        goal_msg.request.allowed_planning_time = 5.0
+        goal_msg.request.max_acceleration_scaling_factor = 0.5
+        goal_msg.request.max_velocity_scaling_factor = 0.5
         goal_msg.request.goal_constraints.append(self.build_constraints(pose))
         return goal_msg
 
-    def send_to_start(self):
-        pose = PoseStamped()
-        pose.header.frame_id = 'base_link'
-        pose.pose.position = make_point(0.0, -0.3, 0.6)
-        pose.pose.orientation = make_quaternion(0.0, -1.0, 0.0, 0.0)
-        goal_msg = self.create_movegroup_goal(pose)
+    # def send_to_start(self):
+    #     pose = PoseStamped()
+    #     pose.header.frame_id = 'base_link'
+    #     pose.pose.position = make_point(0.0, -0.3, 0.6)
+    #     pose.pose.orientation = make_quaternion(0.0, -1.0, 0.0, 0.0)
+    #     goal_msg = self.create_movegroup_goal(pose)
 
-        self.get_logger().info('Sending goal to start position...')
-        return self.send_goal(goal_msg)
-
-    def send_goal(self, goal_msg: MoveGroup.Goal):
-        self.get_logger().info('Sending goal...')
-        future = self._action_client.send_goal_async(goal_msg, feedback_callback=self.feedback_callback)
-        #rclpy.spin_until_future_complete(self, future, timeout_sec=5.0)
+    #     self.get_logger().info('Sending goal to start position...')
+    #     return self.send_goal(goal_msg)
         
-        goal_handle = future.result()
-        if not goal_handle:
-            self.get_logger().error('Timeout while waiting for goal handle.')
-            return False
-        
-        if not goal_handle.accepted:
-            self.get_logger().error('Goal was rejected by the server.')
-            return False
-
-        # Wait for result (returns a Future)
-        get_result_future = goal_handle.get_result_async()
-        #rclpy.spin_until_future_complete(self, get_result_future)
-        # Get result
-        result = get_result_future.result()
-        if result.status == 6:  # ACTION_RESULT_ABORTED
-            self.get_logger().error('Goal execution was aborted.')
-            return False
-        elif result.status == 4:  # ACTION_RESULT_SUCCEEDED
-            self.get_logger().info('Goal succeeded!')
-            return True
-        else:
-            self.get_logger().warn(f'Goal finished with status {result.status}')
-            return False
-        
-    def feedback_callback(self, feedback: MoveGroup_FeedbackMessage):
-        self.get_logger().info(f'Feedback: {feedback.feedback.state}')
-        
-    def move_to(self, x: float, y: float, z: float, orientation: Optional[Quaternion] = None):
-        pose = PoseStamped()
-        pose.header.frame_id = 'base_link'
-        pose.pose.position = make_point(x, y, z)
-        pose.pose.orientation = orientation if orientation else make_quaternion(0.0, -1.0, 0.0, 0.0)
-
-        goal_msg = self.create_movegroup_goal(pose)
-        self.send_goal(goal_msg)
-
 def main(args=None):
     rclpy.init(args=args)
     commander = MoveItCommander()
-    rclpy.spin(commander)
+    
+    # Use a single threaded executor to handle the callbacks
+    executor = rclpy.executors.SingleThreadedExecutor()
+    executor.add_node(commander)
+    executor.spin()
+
     commander.destroy_node()
     rclpy.shutdown()

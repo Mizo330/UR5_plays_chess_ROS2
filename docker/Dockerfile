@@ -65,7 +65,7 @@ RUN apt-get update && \
     curl\
     gdb \
     python3-pip\
-    python3-apt\
+    python3-apt\    
     python3-rosdep\
     clang-tidy
 
@@ -166,6 +166,9 @@ USER appuser
 ARG VSCODE_COMMIT_HASH
 RUN bash /home/appuser/ros2_ws/.devcontainer/preinstall_vscode.sh $VSCODE_COMMIT_HASH /home/appuser/ros2_ws/.devcontainer/devcontainer.json
 
+RUN mkdir -p /home/appuser/ros2_ws/src/my_packages && \
+    mkdir -p /home/appuser/ros2_ws/.vscode
+
 USER appuser
 COPY --chown=appuser:appuser ./my_packages /home/appuser/ros2_ws/src/my_packages
 
@@ -175,11 +178,15 @@ RUN cd /home/appuser/ros2_ws && \
     source /opt/ros/$ROS_DISTRO/setup.bash && \
     colcon build --symlink-install 
 
-
-RUN mkdir -p /home/appuser/ros2_ws/src/my_packages && \
-    mkdir -p /home/appuser/ros2_ws/.vscode
-
 #make it that the setup.bash is sourced when a new terminal is opened
 USER appuser
 RUN echo "source /home/appuser/ros2_ws/install/setup.bash" >> /home/appuser/.bashrc
 
+USER root
+RUN apt-get update && \
+    apt-get install -y\
+    pipx
+USER appuser
+RUN pipx ensurepath
+
+RUN pip install python-chess --break-system-packages

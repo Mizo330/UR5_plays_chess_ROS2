@@ -16,7 +16,7 @@ setup(
          # Include all launch files.
         (os.path.join('share', package_name, 'launch'), glob(os.path.join('launch', '*launch.[pxy][yma]*'))),
     ],
-    install_requires=['setuptools','ur_chess_msgs'],
+    install_requires=['setuptools','ur_chess_msgs',],
     zip_safe=True,
     maintainer='appuser',
     maintainer_email='bancsimark02@gmail.com',
@@ -27,6 +27,7 @@ setup(
         'console_scripts': [
             'move_controller = ur_chess.move_controller:main',
             'game_manager = ur_chess.game_manager:main',
+            'gui = ur_chess.game_gui:main',
         ],
     },
 )

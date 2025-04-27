@@ -1,11 +1,13 @@
 {
     "python.autoComplete.extraPaths": [
         "/opt/ros/jazzy/lib/python3.10/site-packages",
-        "/opt/ros/jazzy/local/lib/python3.10/dist-packages"
+        "/opt/ros/jazzy/local/lib/python3.10/dist-packages",
+        "/home/appuser/ros2_ws/src/ros_utilities/synchros2",
     ],
     "python.analysis.extraPaths": [
         "/opt/ros/jazzy/lib/python3.10/site-packages",
-        "/opt/ros/jazzy/local/lib/python3.10/dist-packages"
+        "/opt/ros/jazzy/local/lib/python3.10/dist-packages",
+        "/home/appuser/ros2_ws/src/ros_utilities/synchros2",
     ],
     "ros.distro": "jazzy",
     "workbench.colorCustomizations": {
