@@ -1,6 +1,4 @@
 import rclpy
-import asyncio
-from rclpy.executors import MultiThreadedExecutor
 import rclpy.executors
 from rclpy.node import Node
 from rclpy.action import ActionClient
@@ -12,6 +10,7 @@ from sensor_msgs.msg import JointState
 from shape_msgs.msg import SolidPrimitive
 from ur_chess.misc.math_helpers import make_vector3, make_quaternion, make_point
 from ur_chess_msgs.srv import URChessMovePiece
+from ur_chess_msgs.msg import URChessMoveResult
 import math
 import yaml
 import os
@@ -20,7 +19,8 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.duration import Duration
 from action_msgs.msg import GoalStatus
 import time
-
+import threading
+from ur_chess.misc.text_color import TextColor
 
 WORKSPACE_MIN_CORNER = make_vector3(x=-1.0, y=-1.0, z=-1.0)
 WORKSPACE_MAX_CORNER = make_vector3(x=1.0, y=1.0, z=1.0)
@@ -39,10 +39,14 @@ class MoveItCommander(Node):
         self.constraints_yaml = self.load_constraints_from_yaml()
 
         # Create ActionClient and wait for the server
+        self.get_logger().info('Waiting for MoveGroup action server...')
         self._action_client = ActionClient(self, MoveGroup, 'move_action')
         self._action_client.wait_for_server()
         self.get_logger().info('MoveGroup action server is available.')
 
+        # Create a publisher for the feedback messages
+        self.move_res_pub = self.create_publisher(URChessMoveResult,  '/ur_chess/move_result', 10)
+        
         # Create a service
         self.create_service(URChessMovePiece, 'ur_chess/move_piece', self.move_piece_callback)
         self.get_logger().info('Service ur_chess/move_piece is ready.')
@@ -51,7 +55,10 @@ class MoveItCommander(Node):
         self._callback_group = ReentrantCallbackGroup()
         self._goal_queue = []   
         self._active_goal = None
-
+        self._goal_done_condition = threading.Condition()
+        
+        self.get_logger().info(TextColor.color_text('MoveItCommander initialized', TextColor.OKCYAN))
+        
     def load_constraints_from_yaml(self):
         if not os.path.isfile(self.constraints_file):
             self.get_logger().error(f"Constraints file not found: {self.constraints_file}")
@@ -59,20 +66,27 @@ class MoveItCommander(Node):
         with open(self.constraints_file, 'r') as f:
             return yaml.safe_load(f)
         
-    def enqueue_goal(self, goal_msg, on_result_cb=None):
+    def enqueue_goal(self, goal_msg, on_result_cb=None, goal_str =None):
         """Add a goal to the queue. on_result_cb is called with the result."""
-        self._goal_queue.append((goal_msg, on_result_cb))
+        self._goal_queue.append((goal_msg, on_result_cb, goal_str))
         # if nothing is active right now, start the first one
         if self._active_goal is None:
             self._send_next()
 
     def _send_next(self):
         if not self._goal_queue:
-            self.get_logger().info('All goals completed.')
+            if self.res_msg.success:
+                self.get_logger().info('All goals completed.')
+            else:
+                self.get_logger().error('All goals failed.')
+            self.move_res_pub.publish(self.res_msg)
             return
 
-        goal_msg, on_result_cb = self._goal_queue.pop(0)
-        self.get_logger().info(f'Sending next goal')
+        goal_msg, on_result_cb, goal_str = self._goal_queue.pop(0)
+        if goal_str:
+            self.get_logger().info(f'Sending goal: {goal_str}')
+        else:
+            self.get_logger().info(f'Sending next goal')
         send_future = self._action_client.send_goal_async(goal_msg)
         send_future.add_done_callback(
             lambda fut: self._on_goal_response(fut, on_result_cb)
@@ -99,13 +113,22 @@ class MoveItCommander(Node):
     def _on_result(self, future, on_result_cb):
         result: MoveGroup.Result = future.result().result
         status = future.result().status
-
+        self.res_msg = URChessMoveResult()
+        
         if status == GoalStatus.STATUS_SUCCEEDED:
-            self.get_logger().info(f'Goal succeeded: {result.error_code}')
+            self.get_logger().info(f'Goal succeeded')
+            self.res_msg.success = True
+            self.res_msg.message = 'Goal succeeded'
+            self.res_msg.error_code = result.error_code.val
         else:
             self.get_logger().warn(f'Goal failed with status: {status}')
-            self.get_logger().warn(f'Error code: {result.error_code}')
-        
+            self.get_logger().warn(f'Error code: {result.error_code.message}')
+            self.res_msg.success = False
+            self.res_msg.message = f'Goal failed with status: {status}'
+            self.res_msg.error_code = result.error_code.val
+            #flush the queue
+            self._goal_queue.clear()
+                
         # call user‐provided callback if any
         if on_result_cb:
             try:
@@ -115,41 +138,47 @@ class MoveItCommander(Node):
 
         # clear active and send the next in queue
         self._active_goal = None
-        time.sleep(2)
+                
+        time.sleep(1)
         self._send_next()
         
-    def move_piece_callback(self, request:URChessMovePiece.Request, response):
+    def move_piece_callback(self, request:URChessMovePiece.Request, response:URChessMovePiece.Response):
         """Callback for the move_piece service."""
         self.get_logger().info('Received request to move to position')
-        start_x = request.start_x
-        start_y = request.start_y
-        start_z = request.start_z
-        end_x = request.end_x
-        end_y = request.end_y
-        end_z = request.end_z
-        
-        #Above the start piece
-        goal1 = self.create_mg_from_point(start_x, start_y, start_z+CHESSPIECE_CLEARANCE)
-        #At the start piece
-        goal2 = self.create_mg_from_point(start_x, start_y, start_z)
-        #Above the end piece
-        goal3 = self.create_mg_from_point(end_x, end_y, end_z+CHESSPIECE_CLEARANCE)
-        #At the end piece
-        goal4 = self.create_mg_from_point(end_x, end_y, end_z)
-        # Queue the goals
-        self.enqueue_goal(goal1)
-        self.enqueue_goal(goal2)
-        #Move up again
-        self.enqueue_goal(goal1)
-        #Move to the end position
-        self.enqueue_goal(goal3)
-        #Move down to the end position
-        self.enqueue_goal(goal4)
-        # Move back up 
-        self.enqueue_goal(goal3)
-        
-        response.success = True  # or False based on your logic
-        return response
+        try:
+            #TODO do some assertions here
+            start_x = request.start_x
+            start_y = request.start_y
+            start_z = request.start_z
+            end_x = request.end_x
+            end_y = request.end_y
+            end_z = request.end_z
+            
+            #Above the start piece
+            goal1 = self.create_mg_from_point(start_x, start_y, start_z+CHESSPIECE_CLEARANCE)
+            #At the start piece
+            goal2 = self.create_mg_from_point(start_x, start_y, start_z)
+            #Above the end piece
+            goal3 = self.create_mg_from_point(end_x, end_y, end_z+CHESSPIECE_CLEARANCE)
+            #At the end piece
+            goal4 = self.create_mg_from_point(end_x, end_y, end_z)
+            # Queue the goals
+            self.enqueue_goal(goal1, goal_str='Move above piece')
+            self.enqueue_goal(goal2, goal_str='Grab piece')
+            self.enqueue_goal(goal1, goal_str='Move up')
+            self.enqueue_goal(goal3, goal_str='Move to goal position')
+            self.enqueue_goal(goal4, goal_str='Place piece')
+            self.enqueue_goal(goal3, goal_str='Move up')
+            
+            self.get_logger().info('Waiting for goals to complete...')
+            response.success = True
+            response.message = 'Goals queued successfully, await succecs result on /robot_result'
+            return response
+        except Exception as e:
+            self.get_logger().error(f'Error in move_piece_callback: {e}')
+            response.message = f'Error in move_piece_callback: {e}'
+            response.success = False
+            return response
 
     def create_mg_from_point(self,x, y, z):
         """Create a MoveGroup goal from a point."""

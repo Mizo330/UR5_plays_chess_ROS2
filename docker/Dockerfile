@@ -109,32 +109,38 @@ RUN curl https://packages.osrfoundation.org/gazebo.gpg --output /usr/share/keyri
     gz-harmonic \
     ros-$ROS_DISTRO-ros-gz
 
-#install moveit2 from source
-#prerequisites
+#install moveit2 (binary)
 USER root
-RUN rosdep update &&\
-    apt-get update &&\
-    apt-get dist-upgrade -y &&\
+RUN apt-get update && \
     apt-get install -y\
-    python3-colcon-common-extensions\
-    python3-colcon-mixin \
-    python3-vcstool &&\
-    colcon mixin update default
+    ros-$ROS_DISTRO-moveit
+    
+# #install moveit2 from source
+# #prerequisites
+# USER root
+# RUN rosdep update &&\
+#     apt-get update &&\
+#     apt-get dist-upgrade -y &&\
+#     apt-get install -y\
+#     python3-colcon-common-extensions\
+#     python3-colcon-mixin \
+#     python3-vcstool &&\
+#     colcon mixin update default
 
-#download moveit2
-USER root
-RUN cd /home/appuser/ros2_ws/src &&\
-    # If using for a specific version, use the tag instead of main, as for some reason jazzy is the main branch, and not the jazzy branch
-    git clone -b main https://github.com/moveit/moveit2_tutorials &&\
-    vcs import --recursive < moveit2_tutorials/moveit2_tutorials.repos &&\
-    apt-get update &&\
-    rosdep install -r --from-paths . --ignore-src --rosdistro $ROS_DISTRO -y
+# #download moveit2
+# USER root
+# RUN cd /home/appuser/ros2_ws/src &&\
+#     # If using for a specific version, use the tag instead of main, as for some reason jazzy is the main branch, and not the jazzy branch
+#     git clone -b main https://github.com/moveit/moveit2_tutorials &&\
+#     vcs import --recursive < moveit2_tutorials/moveit2_tutorials.repos &&\
+#     apt-get update &&\
+#     rosdep install -r --from-paths . --ignore-src --rosdistro $ROS_DISTRO -y
 
-#build moveit2, this will take a while  
-USER appuser
-RUN cd /home/appuser/ros2_ws && \
-    source /opt/ros/$ROS_DISTRO/setup.bash && \
-    MAKEFLAGS=-j8 colcon build --parallel-workers 2 --symlink-install
+# #build moveit2, this will take a while  
+# USER appuser
+# RUN cd /home/appuser/ros2_ws && \
+#     source /opt/ros/$ROS_DISTRO/setup.bash && \
+#     MAKEFLAGS=-j8 colcon build --parallel-workers 2 --symlink-install
 
 #Install stuff for the ur diver
 USER root

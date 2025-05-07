@@ -21,7 +21,6 @@ default_piece_unicode = {
 }
 
 class ROSWorker(QThread):
-    connectedChanged = pyqtSignal(bool)
     jointStateReceived = pyqtSignal(object)
     poseReceived = pyqtSignal(object)
     gripperStateReceived = pyqtSignal(bool)
@@ -39,16 +38,15 @@ class ROSWorker(QThread):
     def run(self):
         rclpy.init()
         self.node = Node('ros_gui_worker')
-        self.pub_estop = self.node.create_publisher(Bool, '/e_stop', 10)
-        self.pub_game_control = self.node.create_publisher(String, '/game_control', 10)
+        self.pub_estop = self.node.create_publisher(Bool, '/ur_chess/e_stop', 10)
+        self.pub_game_control = self.node.create_publisher(String, '/ur_chess/game_control', 10)
 
-        self.node.create_subscription(Bool, '/ros2_gui/connected', self._connected_cb, 10)
         self.node.create_subscription(JointState, '/joint_states', self._joint_cb, 10)
         self.node.create_subscription(PoseStamped, '/tcp_pose', self._pose_cb, 10)
         self.node.create_subscription(Bool, '/gripper/state', self._gripper_cb, 10)
         self.node.create_subscription(String, '/robot/mode', self._mode_cb, 10)
-        self.node.create_subscription(String, '/chessboard_state', self._fen_cb, 10)
-        self.node.create_subscription(String, '/current_move', self._move_cb, 10)
+        self.node.create_subscription(String, '/ur_chess/chessboard_state', self._fen_cb, 10)
+        self.node.create_subscription(String, '/ur_chess/current_move', self._move_cb, 10)
 
         executor = rclpy.get_global_executor()
         executor.add_node(self.node)
@@ -60,7 +58,6 @@ class ROSWorker(QThread):
     def shutdown(self):
         self._running = False
 
-    def _connected_cb(self, msg): self.connectedChanged.emit(msg.data)
     def _joint_cb(self, msg): self.jointStateReceived.emit(msg)
     def _pose_cb(self, msg): self.poseReceived.emit(msg)
     def _gripper_cb(self, msg): self.gripperStateReceived.emit(msg.data)
@@ -140,11 +137,9 @@ class MainWindow(QMainWindow):
         # Status Panel
         status = QGroupBox('Status')
         form = QFormLayout()
-        self.conn_label = QLabel('Disconnected')
         self.mode_label = QLabel('Unknown')
         self.joint_label = QLabel('---')
         self.gripper_label = QLabel('Unknown')
-        form.addRow('ROS:', self.conn_label)
         form.addRow('Mode:', self.mode_label)
         form.addRow('Joints:', self.joint_label)
         form.addRow('Gripper:', self.gripper_label)
@@ -205,7 +200,6 @@ class MainWindow(QMainWindow):
 
     def _connect_signals(self):
         w = self.ros_worker
-        w.connectedChanged.connect(lambda c: self.conn_label.setText('Connected' if c else 'Disconnected'))
         w.modeReceived.connect(lambda m: self.mode_label.setText(m))
         w.jointStateReceived.connect(lambda js: self.joint_label.setText(', '.join(f'{p:.2f}' for p in js.position)))
         w.gripperStateReceived.connect(lambda g: self.gripper_label.setText('Open' if g else 'Closed'))

@@ -4,6 +4,8 @@ from std_msgs.msg import String, Bool
 import yaml
 import chess
 from ur_chess_msgs.srv import URChessMovePiece
+from ur_chess_msgs.msg import URChessMoveResult
+from ur_chess.misc.text_color import TextColor
 
 class GameManager(Node):
     def __init__(self):
@@ -12,9 +14,10 @@ class GameManager(Node):
         config_path = self.declare_parameter('config_file', '/home/appuser/ros2_ws/src/my_packages/ur_chess/config/board_layout.yaml').get_parameter_value().string_value
         with open(config_path, 'r') as f:
             cfg = yaml.safe_load(f)
-        # config: { 'a1': [x, y, z], 'tile_size': float }
+
         self.corner_a1 = cfg['a1']
         self.tile_size = cfg['tile_size']
+        self.board_orientation = cfg['orientation']
 
         # Internal chess board
         self.board = chess.Board()
@@ -24,40 +27,47 @@ class GameManager(Node):
         # Publishers & Subscribers
         self.move_sub = self.create_subscription(
             String,
-            '/current_move',
+            '/ur_chess/current_move',
             self.move_callback,
             10)
+        # Receive game control commands
         self.control_sub = self.create_subscription(
             String,
-            '/game_control',
+            '/ur_chess/game_control',
             self.control_callback,
             10
         )
-        # Send target coords as string "x1,y1,x2,y2"
-        self.cmd_pub = self.create_publisher(String, '/robot_command', 10)
+        # Receive move result
+        self.result_sub = self.create_subscription(
+            URChessMoveResult,
+            '/ur_chess/move_result',
+            self.result_callback,
+            10
+        )
         # Receive execution result
+        self.get_logger().info('Waiting for move_piece service...')
         self.controller_client = self.create_client(URChessMovePiece, 'ur_chess/move_piece')
         self.controller_client.wait_for_service()
         # Publish updated FEN
-        self.fen_pub = self.create_publisher(String, '/chessboard_state', 10)
+        self.fen_pub = self.create_publisher(String, '/ur_chess/chessboard_state', 10)
 
         # Buffer for current request
         self.pending_move = None
 
-        self.get_logger().info('GameManager node started.')
+        self.get_logger().info(TextColor.color_text('GameManager initialized', TextColor.OKCYAN))
 
     def control_callback(self, msg):
         command = msg.data.lower()
         if command == 'play':
             if self.state in ('paused', 'stopped'):
-                self.get_logger().info('Playing game')
+                self.get_logger().info(TextColor.color_text('Starting game', TextColor.OKGREEN))
                 self.state = 'running'
         elif command == 'pause':
             if self.state == 'running':
-                self.get_logger().info('Pausing game')
+                self.get_logger().info(TextColor.color_text('Pausing game', TextColor.WARNING))
                 self.state = 'stopped'
         elif command == 'stop':
-            self.get_logger().info('Stopping and resetting game')
+            self.get_logger().info(TextColor.color_text('Stopping game', TextColor.FAIL))
             self.state = 'stopped'
             self.board.reset()
             fen = self.board.fen()
@@ -70,6 +80,9 @@ class GameManager(Node):
             self.get_logger().warn('Game is not running; ignoring move command')
             return
         move_str = msg.data  # e.g. "e2e4"
+        if self.pending_move is not None:
+            self.get_logger().warn('Still waiting for previous move result; ignoring {}'.format(move_str))
+            return
         try:
             board = self.board.copy()
             board.parse_uci(move_str)
@@ -78,10 +91,6 @@ class GameManager(Node):
             return
         except chess.IllegalMoveError:
             self.get_logger().error(f'Illegal in this position: {move_str}')
-            return
-
-        if self.pending_move is not None:
-            self.get_logger().warn('Still waiting for previous move result; ignoring {}'.format(move_str))
             return
         try:
             # compute coordinates
@@ -98,14 +107,27 @@ class GameManager(Node):
             req.end_y = y2
             req.end_z = self.corner_a1[2]
             self.get_logger().info(f'Calling move_piece with {x1}, {y1}, {x2}, {y2}')
-            handle = self.controller_client.call_async(req)
-            handle.add_done_callback(self.result_callback)
+            result = self.controller_client.call_async(req)
+            result.add_done_callback(self.srv_response_callback)
             self.pending_move = move_str
         except Exception as e:
             self.get_logger().error(f'Invalid move format: {move_str} ({e})')
 
-    def result_callback(self, future):
-        msg = future.result()  # wait for result
+    def srv_response_callback(self, future):
+        if future.result() is None:
+            self.get_logger().error('Service call failed')
+            return
+        result = future.result()
+        if result.success:
+            self.get_logger().info('Move queued successfully, waiting for result')
+        else:
+            self.get_logger().error(f'Move queue failed: {result.error_message}')
+            raise RuntimeError(f'Move queue failed: {result.error_message}')
+
+        
+        
+    def result_callback(self, msg: URChessMoveResult):
+        self.get_logger().info(f'Result received: {msg}')
         if self.pending_move is None:
             return  # spurious
         if msg.success:
@@ -124,8 +146,8 @@ class GameManager(Node):
         file = ord(square[0]) - ord('a')
         rank = int(square[1]) - 1
         # center offset: add half tile
-        x = self.corner_a1[0] + file * self.tile_size + self.tile_size/2
-        y = self.corner_a1[1] + rank * self.tile_size + self.tile_size/2
+        x = self.corner_a1[0] + self.board_orientation[0]*(file * self.tile_size + self.tile_size/2)
+        y = self.corner_a1[1] + self.board_orientation[1]*(rank * self.tile_size + self.tile_size/2)
         # z could be constant above board
         z = self.corner_a1[2]
         return round(x, 3), round(y, 3)
