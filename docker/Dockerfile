@@ -113,36 +113,11 @@ RUN curl https://packages.osrfoundation.org/gazebo.gpg --output /usr/share/keyri
 USER root
 RUN apt-get update && \
     apt-get install -y\
-    ros-$ROS_DISTRO-moveit
-    
-# #install moveit2 from source
-# #prerequisites
-# USER root
-# RUN rosdep update &&\
-#     apt-get update &&\
-#     apt-get dist-upgrade -y &&\
-#     apt-get install -y\
-#     python3-colcon-common-extensions\
-#     python3-colcon-mixin \
-#     python3-vcstool &&\
-#     colcon mixin update default
-
-# #download moveit2
-# USER root
-# RUN cd /home/appuser/ros2_ws/src &&\
-#     # If using for a specific version, use the tag instead of main, as for some reason jazzy is the main branch, and not the jazzy branch
-#     git clone -b main https://github.com/moveit/moveit2_tutorials &&\
-#     vcs import --recursive < moveit2_tutorials/moveit2_tutorials.repos &&\
-#     apt-get update &&\
-#     rosdep install -r --from-paths . --ignore-src --rosdistro $ROS_DISTRO -y
-
-# #build moveit2, this will take a while  
-# USER appuser
-# RUN cd /home/appuser/ros2_ws && \
-#     source /opt/ros/$ROS_DISTRO/setup.bash && \
-#     MAKEFLAGS=-j8 colcon build --parallel-workers 2 --symlink-install
+    ros-$ROS_DISTRO-moveit\
+    ros-$ROS_DISTRO-moveit-py
 
 #Install stuff for the ur diver
+#Prerequisites 
 USER root
 RUN apt-get update && \
     apt-get install -y\
@@ -151,20 +126,32 @@ RUN apt-get update && \
     ros-$ROS_DISTRO-control-msgs \
     ros-$ROS_DISTRO-control-toolbox \
     ros-$ROS_DISTRO-realtime-tools \
-    ros-$ROS_DISTRO-srdfdom
+    ros-$ROS_DISTRO-srdfdom \
+    ros-$ROS_DISTRO-gz-ros2-control \
+    ros-$ROS_DISTRO-rqt-joint-trajectory-controller
 
-#Install UR driver from source, using the gripper branch
-#Prerequisites
-USER root
-RUN apt-get update &&\
-    apt-get install -y\
-    ros-$ROS_DISTRO-ur
+#Install UR driver and the RH-P12-RN-A from source, using the gripper branch
 
-#Install ur gazebo simulation
-USER root
-RUN cd /home/appuser/ros2_ws &&\
-    git clone -b ros2 https://github.com/UniversalRobots/Universal_Robots_ROS2_GZ_Simulation.git src/ur_simulation_gz &&\
-    rosdep update && rosdep install --ignore-src --from-paths src -y
+#Clone a bunch of repos
+#! Dynamic distro choise wont work, as each repo has only one viable branch.
+USER appuser
+RUN cd /home/appuser/ros2_ws/src &&\
+    git clone -b humble https://github.com/ros-industrial/ur_msgs &&\
+    git clone -b ros2-jazzy-gripper https://github.com/MOGI-ROS/Universal_Robots_ROS2_GZ_Simulation &&\
+    git clone -b ros2-jazzy-gripper https://github.com/MOGI-ROS/Universal_Robots_ROS2_Description &&\
+    git clone -b ros2-jazzy-gripper https://github.com/MOGI-ROS/Universal_Robots_ROS2_Driver &&\
+    git clone -b ros2-jazzy https://github.com/dudasdavid/RH-P12-RN-A &&\
+    git clone https://github.com/UniversalRobots/Universal_Robots_Client_Library &&\
+    cd Universal_Robots_Client_Library/ &&\
+    git checkout tags/1.9.0
+
+
+#build the stuff, and leave two cores for the OS to not shit itself
+#? in the case of the pc having less than two cores... buy a new pc
+USER appuser
+RUN cd /home/appuser/ros2_ws && \
+    source /opt/ros/$ROS_DISTRO/setup.bash && \
+    MAKEFLAGS="-j$(nproc --ignore=2)" colcon build --symlink-install
 
 COPY  --chown=appuser:appuser ./misc/.devcontainer/ /home/appuser/ros2_ws/.devcontainer/
 
@@ -188,11 +175,10 @@ RUN cd /home/appuser/ros2_ws && \
 USER appuser
 RUN echo "source /home/appuser/ros2_ws/install/setup.bash" >> /home/appuser/.bashrc
 
-USER root
-RUN apt-get update && \
-    apt-get install -y\
-    pipx
-USER appuser
-RUN pipx ensurepath
-
 RUN pip install python-chess --break-system-packages
+
+#make sure it exits
+ENV GZ_SIM_RESOURCE_PATH=""
+
+
+USER appuser

@@ -1,10 +1,11 @@
-# UR5E robot plays chess - ROS2 adaptation
+# UR5E robot plays chess - ROS2 implementation
 
 ### TODOS:
 - [ ] Make a world with chess scene
-- [ ] Make moveit controller
-- [ ] Make estop?
-- [ ] Setup driver and gazebo for the [RH-P12-RN-A](https://github.com/ROBOTIS-GIT/RH-P12-RN-A) gribber
+- [x] Make moveit controller
+  - [ ] Refine controller with moveit_py
+- [ ] ~~Make estop?~~
+- [x] Setup driver and gazebo for the [RH-P12-RN-A](https://github.com/ROBOTIS-GIT/RH-P12-RN-A) gripper
 - [ ] Make Stockfish chess node
 - [ ] Test driver on real life robot
 
@@ -96,22 +97,28 @@ Open the ros2_ws folder, that will be the workspace folder, where you can build.
 >[!IMPORTANT] 
 > Only colcon build in this folder to circumvent any issues!
 
-## Running the UR driver
+## Running the UR driver (with the gripper attached)
 Once you are inside the container, you can start running drivers and writing you code.
 
 The full documentation about the UR driver and its packages can be found [here](https://docs.universal-robots.com/Universal_Robots_ROS2_Documentation/index.html).
 
 ### Simulation
 
-To run the gazebo sim: 
+To run the sim with moveit and gazebo: 
 ```bash
-ros2 launch ur_simulation_gz ur_sim_control.launch.py ur_type:=ur5e
+ros2 launch ur_simulation_gz ur_sim_moveit.launch.py ur_type:=ur5e
 ```
-Launch a simple test to see if everything works.
+
+Next launch the chess simulation:
 ```bash
-ros2 run ur_robot_driver example_move.py
+ros2 launch ur_chess ur_chess.launch.py
 ```
-This was copied from the documentation, for more in-depth info visit the documentation's [simulation section](https://docs.universal-robots.com/Universal_Robots_ROS2_Documentation/doc/ur_simulation_gz/ur_simulation_gz/doc/usage.html)
+
+Right now the only the arm movement works, in an empty space. On the provided GUI however, you can observe the current hypotethical chess game.
+
+![promo](media/screenshot.png)
+
+The game manager waits for a new move on the topic `/ur_chess/current_move` in the [UCI](https://en.wikipedia.org/wiki/Universal_Chess_Interface) format, and when the robot finishes plaing the piece into the new pos it updates the current chessboard state in [FEN](https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation) format on `/ur_chess/chessboard_state`
 
 ### Real-life
 - TBD
