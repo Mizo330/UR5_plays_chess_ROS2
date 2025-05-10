@@ -1,13 +1,16 @@
 # UR5E robot plays chess - ROS2 implementation
 
 ### TODOS:
+- [ ] Make Stockfish chess node
 - [ ] Make a world with chess scene
 - [x] Make moveit controller
-  - [ ] Refine controller with moveit_py
+  - [x] Refine controller with moveit_py
 - [ ] ~~Make estop?~~
 - [x] Setup driver and gazebo for the [RH-P12-RN-A](https://github.com/ROBOTIS-GIT/RH-P12-RN-A) gripper
-- [ ] Make Stockfish chess node
-- [ ] Test driver on real life robot
+- [ ] Refine code
+  - [ ] Better error handling
+  - [ ] Config for constraints, maybe dynamic based on borad loc.
+- [ ] **Test driver on real life robot**
 
 **Project makers**
 - Márk **Bancsi**

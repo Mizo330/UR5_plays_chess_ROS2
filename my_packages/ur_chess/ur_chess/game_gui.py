@@ -23,7 +23,7 @@ default_piece_unicode = {
 class ROSWorker(QThread):
     jointStateReceived = pyqtSignal(object)
     poseReceived = pyqtSignal(object)
-    gripperStateReceived = pyqtSignal(bool)
+    gripperStateReceived = pyqtSignal(str)
     modeReceived = pyqtSignal(str)
     fenUpdated = pyqtSignal(str)
     currentMoveReceived = pyqtSignal(str)
@@ -42,8 +42,6 @@ class ROSWorker(QThread):
         self.pub_game_control = self.node.create_publisher(String, '/ur_chess/game_control', 10)
 
         self.node.create_subscription(JointState, '/joint_states', self._joint_cb, 10)
-        self.node.create_subscription(PoseStamped, '/tcp_pose', self._pose_cb, 10)
-        self.node.create_subscription(Bool, '/gripper/state', self._gripper_cb, 10)
         self.node.create_subscription(String, '/robot/mode', self._mode_cb, 10)
         self.node.create_subscription(String, '/ur_chess/chessboard_state', self._fen_cb, 10)
         self.node.create_subscription(String, '/ur_chess/current_move', self._move_cb, 10)
@@ -58,9 +56,22 @@ class ROSWorker(QThread):
     def shutdown(self):
         self._running = False
 
-    def _joint_cb(self, msg): self.jointStateReceived.emit(msg)
-    def _pose_cb(self, msg): self.poseReceived.emit(msg)
-    def _gripper_cb(self, msg): self.gripperStateReceived.emit(msg.data)
+    def _joint_cb(self, msg):
+        # Gripper open/close based on joint[3]
+        try:
+            gripper_pos = msg.position[3]
+            is_closed = gripper_pos > 0.8
+            self.gripperStateReceived.emit("closed" if is_closed else "open")
+        except IndexError:
+            print("Joint[3] not available in joint state message")
+        # Filter out joints at index 1, 2, 3
+        filtered_positions = [p for i, p in enumerate(msg.position) if i not in [1, 2, 3, 4]]
+        
+        # Emit filtered joint states
+        filtered_msg = msg
+        filtered_msg.position = filtered_positions
+        self.jointStateReceived.emit(filtered_msg)
+
     def _mode_cb(self, msg): self.modeReceived.emit(msg.data)
     def _fen_cb(self, msg): self.fenUpdated.emit(msg.data.split(' ')[0])
     def _move_cb(self, msg): self.currentMoveReceived.emit(msg.data)
@@ -202,7 +213,8 @@ class MainWindow(QMainWindow):
         w = self.ros_worker
         w.modeReceived.connect(lambda m: self.mode_label.setText(m))
         w.jointStateReceived.connect(lambda js: self.joint_label.setText(', '.join(f'{p:.2f}' for p in js.position)))
-        w.gripperStateReceived.connect(lambda g: self.gripper_label.setText('Open' if g else 'Closed'))
+        w.gripperStateReceived.connect(lambda g: self.gripper_label.setText('Open' if g == 'open' else 'Closed'))
+
         w.fenUpdated.connect(self.chessboard.update_board)
         w.currentMoveReceived.connect(self.chessboard.highlight_move)
 

@@ -37,13 +37,13 @@ class GameManager(Node):
             self.control_callback,
             10
         )
-        # Receive move result
-        self.result_sub = self.create_subscription(
-            URChessMoveResult,
-            '/ur_chess/move_result',
-            self.result_callback,
-            10
-        )
+        # # Receive move result
+        # self.result_sub = self.create_subscription(
+        #     URChessMoveResult,
+        #     '/ur_chess/move_result',
+        #     self.result_callback,
+        #     10
+        # )
         # Receive execution result
         self.get_logger().info('Waiting for move_piece service...')
         self.controller_client = self.create_client(URChessMovePiece, 'ur_chess/move_piece')
@@ -119,26 +119,13 @@ class GameManager(Node):
             return
         result = future.result()
         if result.success:
-            self.get_logger().info('Move queued successfully, waiting for result')
-        else:
-            self.get_logger().error(f'Move queue failed: {result.error_message}')
-            raise RuntimeError(f'Move queue failed: {result.error_message}')
-
-        
-        
-    def result_callback(self, msg: URChessMoveResult):
-        self.get_logger().info(f'Result received: {msg}')
-        if self.pending_move is None:
-            return  # spurious
-        if msg.success:
-            # successful
             self.board.push_uci(self.pending_move)
             fen = self.board.fen()
             self.fen_pub.publish(String(data=fen))
             self.get_logger().info(f'Move {self.pending_move} succeeded. Published FEN.')
         else:
             self.get_logger().error(f'Move {self.pending_move} failed.')
-        # clear pending
+            raise RuntimeError(f'Move queue failed: {result.error_message}')
         self.pending_move = None
 
     def square_to_xy(self, square: str):

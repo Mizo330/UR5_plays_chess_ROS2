@@ -29,13 +29,19 @@ def generate_launch_description():
     declared_arguments.append(
         Node(
             package=THIS_PACKAGE,
-            executable='move_controller',
-            name='move_controller',
+            executable='moveit_controller',
+            name='moveit_controller',
             output='screen',
             parameters=[{
-                'constraints_file': PathJoinSubstitution(
-                    [FindPackageShare(THIS_PACKAGE), 'config', 'planning_constaints.yaml']
-                )
+                'moveit_cpp_cfg': PathJoinSubstitution(
+                    [FindPackageShare(THIS_PACKAGE), 'config', 'moveit_cpp.yaml']
+                ),
+                'moveit_cpp_srdf': PathJoinSubstitution(
+                    [FindPackageShare(THIS_PACKAGE), 'config', 'moveit_cpp.srdf']
+                ),
+                'moveit_controller_cfg': PathJoinSubstitution(
+                    [FindPackageShare("ur_moveit_config"), 'config', 'moveit_controllers.yaml']
+                ),
             }],
         )
     )

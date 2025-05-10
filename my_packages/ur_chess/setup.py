@@ -16,7 +16,7 @@ setup(
          # Include all launch files.
         (os.path.join('share', package_name, 'launch'), glob(os.path.join('launch', '*launch.[pxy][yma]*'))),
         # Include all config files.
-        (os.path.join('share', package_name, 'config'), glob('config/*.yaml')),
+        (os.path.join('share', package_name, 'config'), glob('config/*')),
     ],
     install_requires=['setuptools','ur_chess_msgs',],
     zip_safe=True,
@@ -28,6 +28,7 @@ setup(
     entry_points={
         'console_scripts': [
             'move_controller = ur_chess.move_controller:main',
+            'moveit_controller = ur_chess.moveit_controller:main',
             'game_manager = ur_chess.game_manager:main',
             'gui = ur_chess.game_gui:main',
         ],
