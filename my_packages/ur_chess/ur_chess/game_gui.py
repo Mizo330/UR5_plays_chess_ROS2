@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import (
     QGroupBox, QFormLayout, QLabel, QPushButton, QToolButton, QStyle
 )
 from PyQt5.QtGui import QPainter, QColor, QFont
-
+import chess
 # Unicode chess symbols mapping
 default_piece_unicode = {
     'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',
@@ -87,7 +87,7 @@ class ROSWorker(QThread):
 class ChessboardWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR'
+        self.fen = chess.STARTING_BOARD_FEN
         self.current_move = ''
         self.square_size = 60
         self.setMinimumSize(self.square_size * 8, self.square_size * 8)

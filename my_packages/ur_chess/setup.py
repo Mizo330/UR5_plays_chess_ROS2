@@ -27,7 +27,6 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'move_controller = ur_chess.move_controller:main',
             'moveit_controller = ur_chess.moveit_controller:main',
             'game_manager = ur_chess.game_manager:main',
             'gui = ur_chess.game_gui:main',
