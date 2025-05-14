@@ -32,7 +32,10 @@ from moveit_msgs.msg import Constraints, JointConstraint
 # moveit python library
 from moveit.core.robot_state import RobotState
 from moveit.planning import MoveItPy, PlanningComponent, TrajectoryExecutionManager, PlanRequestParameters
-
+from moveit.core.planning_interface import MotionPlanResponse
+from moveit.core.robot_trajectory import RobotTrajectory
+from moveit.core.controller_manager import ExecutionStatus
+import numpy as np
 WORKSPACE_MIN_CORNER = make_vector3(x=-1.0, y=-1.0, z=-1.0)
 WORKSPACE_MAX_CORNER = make_vector3(x=1.0, y=1.0, z=1.0)
 
@@ -70,7 +73,7 @@ class MoveItCommander(Node):
 
         self.execution_manager: TrajectoryExecutionManager = self.ur_commander.get_trajectory_execution_manager()
         self.execution_done = threading.Event()
-        
+
         # Create a publisher for the feedback messages
         self.move_res_pub = self.create_publisher(URChessMoveResult,  '/ur_chess/move_result', 10)
         self.control_sub = self.create_subscription(
@@ -121,6 +124,24 @@ class MoveItCommander(Node):
                 break
             else:
                 self.get_logger().error("Planning failed")
+    
+    def plan_trajectory(self, planning_component, single_plan_parameters=None, multi_plan_parameters=None) -> Optional[MotionPlanResponse]:
+        """Plan trajectory (non-blocking)."""
+        for _ in range(10):
+            self.get_logger().info("Planning trajectory")
+            if multi_plan_parameters is not None:
+                plan_result = planning_component.plan(multi_plan_parameters=multi_plan_parameters)
+            elif single_plan_parameters is not None:
+                plan_result = planning_component.plan(single_plan_parameters=single_plan_parameters)
+            else:
+                plan_result = planning_component.plan()
+
+            if plan_result:
+                self.get_logger().info("Planning succeeded")
+                return plan_result
+            else:
+                self.get_logger().error("Planning failed")
+        return None
                 
     def move_piece_callback(self, request:URChessMovePiece.Request, response:URChessMovePiece.Response):
         """Callback for the move_piece service."""
@@ -135,35 +156,57 @@ class MoveItCommander(Node):
             end_z = request.end_z
 
             #Above the start piece
-            goal1 = self.create_pc_from_point(start_x, start_y, start_z+CHESSPIECE_CLEARANCE)
-            self.plan_and_execute(goal1, sleep_time=1.0)#'Move above piece'
-            #At the start piece
+            goal1 = self.create_pc_from_point(start_x, start_y, start_z+0.2)
+            plan_result = self.plan_trajectory(goal1)#, goal_str='Move above piece')
+            traj: RobotTrajectory = plan_result.trajectory
+            traj_msg = traj.get_robot_trajectory_msg()
+            self.execution_manager.push(traj_msg,controllers=[])
+
+            final_positions = traj_msg.joint_trajectory.points[-1].positions
+            # Build a RobotState for the final pose
             goal2 = self.create_pc_from_point(start_x, start_y, start_z)
-            self.plan_and_execute(goal2)#, goal_str='Grab piece')
-            
-            self.ur_commander_gripper.set_start_state_to_current_state()
-            self.ur_commander_gripper.set_goal_state(configuration_name="closed")
-            self.plan_and_execute(self.ur_commander_gripper, sleep_time=2.0)
-            
-            goal1 = self.create_pc_from_point(start_x, start_y, start_z+CHESSPIECE_CLEARANCE)
-            self.plan_and_execute(goal1)#'Move above piece'
-            #Above the end piece
-            goal3 = self.create_pc_from_point(end_x, end_y, end_z+CHESSPIECE_CLEARANCE)
-            self.plan_and_execute(goal3, sleep_time=1.0)#, goal_str='Move to goal position')
+            state = RobotState(self.ur_commander.get_robot_model())
+            state.set_joint_group_positions("ur_manipulator", np.array(final_positions))
+            goal2.set_start_state(configuration_name=None, robot_state=state)
+            plan_result = self.plan_trajectory(goal2)#, goal_str='Move above piece')
+            traj: RobotTrajectory = plan_result.trajectory
+            msg2 = traj.get_robot_trajectory_msg()
 
-            #At the end piece
-            goal4 = self.create_pc_from_point(end_x, end_y, end_z)
-            self.plan_and_execute(goal4)#, goal_str='Place piece')
-            self.ur_commander_gripper.set_start_state_to_current_state()
-            self.ur_commander_gripper.set_goal_state(configuration_name="open")
-            self.plan_and_execute(self.ur_commander_gripper, sleep_time=2.0)
+            self.execution_manager.push(msg2,controllers=[])
 
-            goal3 = self.create_pc_from_point(end_x, end_y, end_z+CHESSPIECE_CLEARANCE)
-            self.plan_and_execute(goal3)#, goal_str='Move to goal position')
             
-            self.ur_commander_arm.set_start_state_to_current_state()
-            self.ur_commander_arm.set_goal_state(configuration_name="chess_home")
-            self.plan_and_execute(self.ur_commander_arm)
+            self.execution_manager.execute(callback=self.success_callback)#, auto_clear=True)
+            # self.execution_manager.wait_for_trajectory_completion()
+            # self.execution_manager.stop_execution()
+            #self.execution_manager.stop_execution()
+            #self.plan_and_execute(goal1, sleep_time=1.0)#'Move above piece'
+            # #At the start piece
+            # goal2 = self.create_pc_from_point(start_x, start_y, start_z)
+            # self.plan_and_execute(goal2)#, goal_str='Grab piece')
+            
+            # self.ur_commander_gripper.set_start_state_to_current_state()
+            # self.ur_commander_gripper.set_goal_state(configuration_name="closed")
+            # self.plan_and_execute(self.ur_commander_gripper, sleep_time=2.0)
+            
+            # goal1 = self.create_pc_from_point(start_x, start_y, start_z+CHESSPIECE_CLEARANCE)
+            # self.plan_and_execute(goal1)#'Move above piece'
+            # #Above the end piece
+            # goal3 = self.create_pc_from_point(end_x, end_y, end_z+CHESSPIECE_CLEARANCE)
+            # self.plan_and_execute(goal3, sleep_time=1.0)#, goal_str='Move to goal position')
+
+            # #At the end piece
+            # goal4 = self.create_pc_from_point(end_x, end_y, end_z)
+            # self.plan_and_execute(goal4)#, goal_str='Place piece')
+            # self.ur_commander_gripper.set_start_state_to_current_state()
+            # self.ur_commander_gripper.set_goal_state(configuration_name="open")
+            # self.plan_and_execute(self.ur_commander_gripper, sleep_time=2.0)
+
+            # goal3 = self.create_pc_from_point(end_x, end_y, end_z+CHESSPIECE_CLEARANCE)
+            # self.plan_and_execute(goal3)#, goal_str='Move to goal position')
+            
+            # self.ur_commander_arm.set_start_state_to_current_state()
+            # self.ur_commander_arm.set_goal_state(configuration_name="chess_home")
+            # self.plan_and_execute(self.ur_commander_arm)
 
             response.success = True
             response.message = 'Success'
@@ -174,6 +217,9 @@ class MoveItCommander(Node):
             response.success = False
             return response
 
+    def success_callback(self, msg: ExecutionStatus):
+        print(msg.status)
+    
     def create_pc_from_point(self,x, y, z):
         """Create a planning component from a point."""
         ur_pc = self.ur_commander_arm
