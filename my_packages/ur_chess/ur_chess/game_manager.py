@@ -105,7 +105,7 @@ class GameManager(Node):
             self.get_logger().info(f'Move {self.pending_move} succeeded. Published FEN.')
         else:
             self.get_logger().error(f'Move {self.pending_move} failed.')
-            raise RuntimeError(f'Move queue failed: {result.message}')
+            raise RuntimeError(f'Move queue failed: {result.message}') #? maybe dont raise error?
         self.pending_move = None
 
 

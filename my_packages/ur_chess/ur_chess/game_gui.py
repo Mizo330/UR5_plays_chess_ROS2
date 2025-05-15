@@ -38,7 +38,7 @@ class ROSWorker(QThread):
     def run(self):
         rclpy.init()
         self.node = Node('ros_gui_worker')
-        self.pub_estop = self.node.create_publisher(Bool, '/ur_chess/e_stop', 10)
+        self.pub_estop = self.node.create_publisher(String, '/trajectory_execution_event', 10)
         self.pub_game_control = self.node.create_publisher(String, '/ur_chess/game_control', 10)
 
         self.node.create_subscription(JointState, '/joint_states', self._joint_cb, 10)
@@ -76,9 +76,9 @@ class ROSWorker(QThread):
     def _fen_cb(self, msg): self.fenUpdated.emit(msg.data.split(' ')[0])
     def _move_cb(self, msg): self.currentMoveReceived.emit(msg.data)
 
-    def send_estop(self, engaged: bool):
+    def send_estop(self, event):
         if self.pub_estop:
-            self.pub_estop.publish(Bool(data=engaged))
+            self.pub_estop.publish(String(data=event))
 
     def send_game_control(self, command: str):
         if self.pub_game_control:
@@ -158,13 +158,9 @@ class MainWindow(QMainWindow):
         layout.addWidget(status)
 
         # E-Stop
-        self.estop_button = QPushButton('E-STOP (WIP)')
+        self.estop_button = QPushButton('E-STOP')
         self.estop_button.setStyleSheet('background:red;color:white;font-size:18pt;')
         layout.addWidget(self.estop_button)
-        #! disable estop button for now
-        self.estop_button.setEnabled(False)
-        self.estop_button.setStyleSheet('background:gray;color:white;font-size:18pt;')
-
 
         # Chessboard
         self.chessboard = ChessboardWidget()
@@ -218,7 +214,7 @@ class MainWindow(QMainWindow):
         w.fenUpdated.connect(self.chessboard.update_board)
         w.currentMoveReceived.connect(self.chessboard.highlight_move)
 
-        self.estop_button.clicked.connect(lambda: w.send_estop(True))
+        self.estop_button.clicked.connect(lambda: w.send_estop("stop"))
         self.play_button.clicked.connect(self.on_play)
         self.pause_button.clicked.connect(self.on_pause)
         self.stop_button.clicked.connect(self.on_stop)

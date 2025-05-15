@@ -301,6 +301,7 @@ class MoveItCommander(Node):
                 return plan_result
             else:
                 self.get_logger().error("Planning failed")
+                raise RuntimeError("Planning failed")
         return None
     
     #! unused        

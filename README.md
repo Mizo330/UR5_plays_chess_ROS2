@@ -5,14 +5,16 @@
 - [ ] Make a world with chess scene
 - [x] Make moveit controller
   - [x] Refine controller with moveit_py
-- [ ] ~~Make estop?~~
+- [x] Make estop in gui
 - [x] Setup driver and gazebo for the [RH-P12-RN-A](https://github.com/ROBOTIS-GIT/RH-P12-RN-A) gripper
+- [x] Add collision geometry for RVIZ
 - [ ] Refine code
+  - [ ] Fix game controls (play, pause, stop)
   - [ ] Better error handling
   - [ ] Config for constraints, maybe dynamic based on borad loc.
 - [ ] **Test driver on real life robot**
 
-**Project makers**
+**People on the project**
 - Márk **Bancsi**
 - Zsombor **Ménes**
 - Xiang **Wang**
