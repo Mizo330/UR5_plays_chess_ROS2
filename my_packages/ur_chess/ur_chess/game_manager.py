@@ -10,14 +10,6 @@ from ur_chess.misc.text_color import TextColor
 class GameManager(Node):
     def __init__(self):
         super().__init__('game_manager')
-        # Load board transform config
-        config_path = self.declare_parameter('config_file', '/home/appuser/ros2_ws/src/my_packages/ur_chess/config/board_layout.yaml').get_parameter_value().string_value
-        with open(config_path, 'r') as f:
-            cfg = yaml.safe_load(f)
-
-        self.corner_a1 = cfg['a1']
-        self.tile_size = cfg['tile_size']
-        self.board_orientation = cfg['orientation']
 
         # Internal chess board
         self.board = chess.Board()
@@ -46,7 +38,7 @@ class GameManager(Node):
         # )
         # Receive execution result
         self.get_logger().info('Waiting for move_piece service...')
-        self.controller_client = self.create_client(URChessMovePiece, 'ur_chess/move_piece')
+        self.controller_client = self.create_client(URChessMovePiece, '/ur_chess/move_piece')
         self.controller_client.wait_for_service()
         # Publish updated FEN
         self.fen_pub = self.create_publisher(String, '/ur_chess/chessboard_state', 10)
@@ -85,33 +77,21 @@ class GameManager(Node):
             return
         try:
             board = self.board.copy()
-            board.parse_uci(move_str)
-        except chess.InvalidMoveError:
+            move = chess.Move.from_uci(move_str)
+            if move not in board.legal_moves:
+                self.get_logger().error(f'Illegal in this position: {move_str}')
+                return
+        except ValueError:
             self.get_logger().error(f'Invalid UCI format: {move_str}')
             return
-        except chess.IllegalMoveError:
-            self.get_logger().error(f'Illegal in this position: {move_str}')
-            return
-        try:
-            # compute coordinates
-            start_sq = chess.SQUARE_NAMES.index(move_str[:2])
-            end_sq = chess.SQUARE_NAMES.index(move_str[2:4])
-            x1, y1 = self.square_to_xy(move_str[:2])
-            x2, y2 = self.square_to_xy(move_str[2:4])
-            # send command to robot
-            req = URChessMovePiece.Request()
-            req.start_x = x1
-            req.start_y = y1
-            req.start_z = self.corner_a1[2]
-            req.end_x = x2
-            req.end_y = y2
-            req.end_z = self.corner_a1[2]
-            self.get_logger().info(f'Calling move_piece with {x1}, {y1}, {x2}, {y2}')
-            result = self.controller_client.call_async(req)
-            result.add_done_callback(self.srv_response_callback)
-            self.pending_move = move_str
-        except Exception as e:
-            self.get_logger().error(f'Invalid move format: {move_str} ({e})')
+        req = URChessMovePiece.Request()
+        req.uci = move_str
+        req.is_capture = board.is_capture(move)
+        req.capturer_color = board.turn
+        self.get_logger().info(f'Sending move request: {move_str}')
+        result = self.controller_client.call_async(req)
+        result.add_done_callback(self.srv_response_callback)
+        self.pending_move = move_str
 
     def srv_response_callback(self, future):
         if future.result() is None:
@@ -125,19 +105,8 @@ class GameManager(Node):
             self.get_logger().info(f'Move {self.pending_move} succeeded. Published FEN.')
         else:
             self.get_logger().error(f'Move {self.pending_move} failed.')
-            raise RuntimeError(f'Move queue failed: {result.error_message}')
+            raise RuntimeError(f'Move queue failed: {result.message}')
         self.pending_move = None
-
-    def square_to_xy(self, square: str):
-        # square: 'a1'..'h8'
-        file = ord(square[0]) - ord('a')
-        rank = int(square[1]) - 1
-        # center offset: add half tile
-        x = self.corner_a1[0] + self.board_orientation[0]*(file * self.tile_size + self.tile_size/2)
-        y = self.corner_a1[1] + self.board_orientation[1]*(rank * self.tile_size + self.tile_size/2)
-        # z could be constant above board
-        z = self.corner_a1[2]
-        return round(x, 3), round(y, 3)
 
 
 def main(args=None):

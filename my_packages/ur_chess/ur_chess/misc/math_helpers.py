@@ -1,4 +1,5 @@
 import math
+from dataclasses import dataclass
 from geometry_msgs.msg import PoseStamped, Vector3, Quaternion, Point
 
 def make_vector3(x, y, z) -> Vector3:
@@ -22,3 +23,9 @@ def make_point(x, y, z) -> Point:
     point.y = y
     point.z = z
     return point
+
+@dataclass
+class Waypoint:
+    named_position: str = None # will overwrite position
+    position: Point = None
+    gripper: str = None  # None, "open", or "close"

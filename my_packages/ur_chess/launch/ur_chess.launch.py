@@ -18,11 +18,6 @@ def generate_launch_description():
             executable='game_manager',
             name='game_manager',
             output='screen',
-            parameters=[{
-                'config_file': PathJoinSubstitution(
-                    [FindPackageShare(THIS_PACKAGE), 'config', 'board_layout.yaml']
-                )
-            }],
         )
     )
     
@@ -42,6 +37,9 @@ def generate_launch_description():
                 'moveit_controller_cfg': PathJoinSubstitution(
                     [FindPackageShare("ur_moveit_config"), 'config', 'moveit_controllers.yaml']
                 ),
+                'board_layout': PathJoinSubstitution(
+                    [FindPackageShare(THIS_PACKAGE), 'config', 'board_layout.yaml']
+                )
             }],
         )
     )

@@ -1,4 +1,4 @@
-a1 : [0.1, -0.3, 0.3]
+a1 : [0.0, -0.3, 0.3]
 tile_size : 0.035
 #Normd vec for x and y (no z as chess pieces normally slide of the table when slanted...)
 orientation: [-1, -1]
