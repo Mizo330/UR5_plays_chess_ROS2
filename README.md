@@ -2,7 +2,8 @@
 
 ### TODOS:
 - [ ] Make Stockfish chess node
-- [ ] Make a world with chess scene
+- [x] Make a world with chess scene
+  - [ ] Try dynamic placement, or just relocate board
 - [x] Make moveit controller
   - [x] Refine controller with moveit_py
 - [ ] ~~Make estop?~~
