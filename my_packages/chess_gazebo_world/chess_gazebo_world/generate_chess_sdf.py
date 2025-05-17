@@ -5,22 +5,22 @@ from rclpy.node import Node
 import os
 
 square_size = 0.0375
-a1_x_0 = 1.0
-a1_y_0 = -1.0
+a1_x_0 = 0.0
+a1_y_0 = -0.3
 a1_x = a1_x_0 - (square_size / 2)
 a1_y = a1_y_0 - (square_size / 2)
-a1_z = 0.3
+a1_z = 0.28
 scale = 1.2
 coll_length = 0.05
 
 table_pose_x = a1_x_0-2*square_size
-table_pose_y = a1_y_0-2*square_size
+table_pose_y = a1_y_0-6*square_size
 table_pose_z = a1_z-1-0.1
-chessboard_pose_x = a1_x_0-2*square_size
-chessboard_pose_y = a1_y_0-2*square_size
+chessboard_pose_x = a1_x_0-4*square_size
+chessboard_pose_y = a1_y_0-4*square_size
 chessboard_pose_z = a1_z-0.01
-base_pose_x = a1_x_0-2*square_size
-base_pose_y = a1_y_0-2*square_size
+base_pose_x = a1_x_0-4*square_size
+base_pose_y = a1_y_0-4*square_size
 base_pose_z = a1_z-0.1
 table_leg_length = a1_z-0.1
 
@@ -62,8 +62,8 @@ pieces = [
 def square_to_xy(square):
     col = "abcdefgh".index(square[0])
     row = int(square[1]) - 1
-    x = a1_x - (col-2) * square_size
-    y = a1_y - (row-2) * square_size
+    x = a1_x - (col) * square_size
+    y = a1_y - (row) * square_size
     return x, y
 
 def generate_detailed_model(name, mesh_path, pose_x, pose_y , pose_z, yaw):
@@ -118,7 +118,7 @@ def generate_detailed_model(name, mesh_path, pose_x, pose_y , pose_z, yaw):
           <pose>0 0 0.005 0 -0 0</pose>
           <geometry>
             <cylinder>
-                <radius>{square_size/2}</radius>
+                <radius>{square_size/4}</radius>
                 <length>{coll_length}</length>
               </cylinder>
           </geometry>

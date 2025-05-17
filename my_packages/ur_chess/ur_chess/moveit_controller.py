@@ -41,7 +41,7 @@ from moveit_msgs.msg import AttachedCollisionObject
 import chess
 from moveit_msgs.msg import ObjectColor
 from std_msgs.msg import ColorRGBA
-CHESSPIECE_CLEARANCE = 0.2  # Clearance above the chess piece
+CHESSPIECE_CLEARANCE = 0.1  # Clearance above the chess piece
 
 class ChessPiece():
     def __init__(self, start_pos, color, start_pose: Pose, size):
@@ -239,7 +239,7 @@ class MoveItCommander(Node):
             table.header.frame_id = "base_link"
             table.primitives = [SolidPrimitive(type=SolidPrimitive.BOX, dimensions=[0.5, 0.5, 0.05])]
             #TODO make this dynamic
-            table.primitive_poses.append(Pose(position=make_point(-0.125, -0.425, 0.248)))
+            table.primitive_poses.append(Pose(position=make_point(-0.125, -0.425, 0.345)))
             table.operation = CollisionObject.ADD
             table_color = ObjectColor(id=table.id, color=ColorRGBA(r=0.7, g=0.7, b=0.1, a=1.0))
             scene.apply_collision_object(table, table_color)
