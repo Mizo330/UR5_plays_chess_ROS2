@@ -177,8 +177,6 @@ RUN echo "source /home/appuser/ros2_ws/install/setup.bash" >> /home/appuser/.bas
 
 RUN pip install python-chess --break-system-packages
 
-#make sure it exits
-ENV GZ_SIM_RESOURCE_PATH=""
-
-
 USER appuser
+
+RUN echo "export GZ_SIM_RESOURCE_PATH="$GZ_SIM_RESOURCE_PATH":/home/appuser/ros2_ws/src/my_packages/chess_gazebo_world/models" >> /home/appuser/.bashrc
