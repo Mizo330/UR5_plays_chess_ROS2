@@ -25,8 +25,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
     'console_scripts': [
-        #Only if spawning is needed
-        #'spawn_pieces = chess_gazebo_world.spawn_pieces:main',
+        'generate_chess_sdf = chess_gazebo_world.generate_chess_sdf:main',
     ],
 },
 )#
