@@ -3,17 +3,23 @@
 ### TODOS:
 - [ ] Make Stockfish chess node
 - [x] Make a world with chess scene
-  - [x] Try dynamic placement, or just relocate board
+  - [x] Make it dynamic with params
+  - [ ] Fix (?) speed issue
 - [x] Make moveit controller
   - [x] Refine controller with moveit_py
 - [x] Make estop in gui
 - [x] Setup driver and gazebo for the [RH-P12-RN-A](https://github.com/ROBOTIS-GIT/RH-P12-RN-A) gripper
 - [x] Add collision geometry for RVIZ
+  - [ ] Fully sync with gazebo params (same .yaml)
 - [ ] Refine code
   - [ ] Fix game controls (play, pause, stop)
   - [ ] Better error handling
   - [ ] Config for constraints, maybe dynamic based on borad loc.
+  - [ ] Handle en passant, checkmate
+- [ ] Make it playable with gui?
+- [ ] Update README
 - [ ] **Test driver on real life robot**
+  - [ ] Make grabber control interface for ROS2
 
 **People on the project**
 - Márk **Bancsi**
