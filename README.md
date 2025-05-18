@@ -4,7 +4,7 @@
 - [ ] Make Stockfish chess node
 - [x] Make a world with chess scene
   - [x] Make it dynamic with params
-  - [ ] Fix (?) arm speed issue
+  - [x] Fix (?) arm speed issue : increase velocity and acc factors in cpp.yaml
 - [x] Make moveit controller
   - [x] Refine controller with moveit_py
 - [x] Make estop in gui
