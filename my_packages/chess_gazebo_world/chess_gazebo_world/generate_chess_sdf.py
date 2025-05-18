@@ -3,24 +3,41 @@
 import rclpy
 from rclpy.node import Node
 import os
+from ament_index_python import get_package_share_directory
+import yaml
+import numpy as np
 
-square_size = 0.0375
-a1_x_0 = 0.0
-a1_y_0 = -0.3
-a1_x = a1_x_0 - (square_size / 2)
-a1_y = a1_y_0 - (square_size / 2)
-a1_z = 0.28
+rclpy.init()
+node = Node("chess_world_gen")
+node.declare_parameter("board_layout", get_package_share_directory("ur_chess") + "/config/board_layout.yaml")
+board_layout_path = node.get_parameter("board_layout").value
+
+with open(board_layout_path, 'r') as f:
+    board_layout = yaml.safe_load(f)
+a1_x_0, a1_y_0, a1_z = board_layout['a1']
+square_size = board_layout['tile_size']
+o_x, o_y  = board_layout['orientation']
+
+#TODO Assertions
+node.get_logger().debug("Read config")
+
+a1_x = a1_x_0 + o_x*(square_size / 2)
+a1_y = a1_y_0 + o_y*(square_size / 2)
 scale = 1.2
-coll_length = 0.05
 
-table_pose_x = a1_x_0-2*square_size
-table_pose_y = a1_y_0-6*square_size
+#Chess piece collision params (for a cylinder)
+#TODO different height for the pieces for realism (king is 1.5 while pawn is 1.1)
+piece_col_lenght = square_size*1.4
+piece_col_radius = square_size/4
+
+table_pose_x = a1_x_0 + o_x*2*square_size
+table_pose_y = a1_y_0 + o_y*8*square_size
 table_pose_z = a1_z-1-0.1
-chessboard_pose_x = a1_x_0-4*square_size
-chessboard_pose_y = a1_y_0-4*square_size
+chessboard_pose_x = a1_x_0 + o_x*4*square_size
+chessboard_pose_y = a1_y_0 + o_y*4*square_size
 chessboard_pose_z = a1_z-0.01
-base_pose_x = a1_x_0-4*square_size
-base_pose_y = a1_y_0-4*square_size
+base_pose_x = chessboard_pose_x
+base_pose_y = chessboard_pose_y
 base_pose_z = a1_z-0.1
 table_leg_length = a1_z-0.1
 
@@ -118,8 +135,8 @@ def generate_detailed_model(name, mesh_path, pose_x, pose_y , pose_z, yaw):
           <pose>0 0 0.005 0 -0 0</pose>
           <geometry>
             <cylinder>
-                <radius>{square_size/4}</radius>
-                <length>{coll_length}</length>
+                <radius>{piece_col_radius}</radius>
+                <length>{piece_col_lenght}</length>
               </cylinder>
           </geometry>
           <surface>
@@ -595,12 +612,13 @@ def main():
         z = chessboard_pose_z + 0.01
         detailed_models.append(generate_detailed_model(name, mesh_path, x, y, z, yaw))
     detailed_models.append("""
-    <!-- A gazebo links attacher -->
-    <plugin name="ros_link_attacher_plugin" filename="libgazebo_ros_link_attacher.so"/>
-  </world>
-</sdf>""")
+                              <!-- A gazebo links attacher -->
+                              <plugin name="ros_link_attacher_plugin" filename="libgazebo_ros_link_attacher.so"/>
+                            </world>
+                          </sdf>""")
     with open("/home/appuser/ros2_ws/src/my_packages/chess_gazebo_world/worlds/chess_room.world", "w") as f:
         f.write("\n".join(detailed_models) + "\n</sdf>\n")
+    node.get_logger().info("Generated chess world")
 
 if __name__ == "__main__":
     main()

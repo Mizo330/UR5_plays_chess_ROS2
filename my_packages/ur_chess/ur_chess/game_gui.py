@@ -10,15 +10,12 @@ from geometry_msgs.msg import PoseStamped
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, Qt, QSize
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QGroupBox, QFormLayout, QLabel, QPushButton, QToolButton, QStyle
+    QGroupBox, QFormLayout, QLabel, QPushButton, QToolButton, QStyle, QMessageBox
 )
 from PyQt5.QtGui import QPainter, QColor, QFont
 import chess
-# Unicode chess symbols mapping
-default_piece_unicode = {
-    'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',
-    'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'
-}
+from ur_chess_msgs.msg import URChessMoveInfo, URChessMoveStatus
+
 
 class ROSWorker(QThread):
     jointStateReceived = pyqtSignal(object)
@@ -26,7 +23,9 @@ class ROSWorker(QThread):
     gripperStateReceived = pyqtSignal(str)
     modeReceived = pyqtSignal(str)
     fenUpdated = pyqtSignal(str)
-    currentMoveReceived = pyqtSignal(str)
+    currentMoveReceived = pyqtSignal(URChessMoveStatus)
+    
+    
 
     def __init__(self):
         super().__init__()
@@ -40,11 +39,12 @@ class ROSWorker(QThread):
         self.node = Node('ros_gui_worker')
         self.pub_estop = self.node.create_publisher(String, '/trajectory_execution_event', 10)
         self.pub_game_control = self.node.create_publisher(String, '/ur_chess/game_control', 10)
+        self.current_move_pub = self.node.create_publisher(String, '/ur_chess/current_move', 10)
 
         self.node.create_subscription(JointState, '/joint_states', self._joint_cb, 10)
         self.node.create_subscription(String, '/robot/mode', self._mode_cb, 10)
         self.node.create_subscription(String, '/ur_chess/chessboard_state', self._fen_cb, 10)
-        self.node.create_subscription(String, '/ur_chess/current_move', self._move_cb, 10)
+        self.node.create_subscription(URChessMoveStatus, '/ur_chess/move_status',self._move_status_cb,10)
 
         executor = rclpy.get_global_executor()
         executor.add_node(self.node)
@@ -60,7 +60,7 @@ class ROSWorker(QThread):
         # Gripper open/close based on joint[3]
         try:
             gripper_pos = msg.position[3]
-            is_closed = gripper_pos > 0.8
+            is_closed = gripper_pos > 0.9
             self.gripperStateReceived.emit("closed" if is_closed else "open")
         except IndexError:
             print("Joint[3] not available in joint state message")
@@ -72,9 +72,9 @@ class ROSWorker(QThread):
         filtered_msg.position = filtered_positions
         self.jointStateReceived.emit(filtered_msg)
 
+    def _move_status_cb(self,msg:URChessMoveStatus): self.currentMoveReceived.emit(msg)
     def _mode_cb(self, msg): self.modeReceived.emit(msg.data)
     def _fen_cb(self, msg): self.fenUpdated.emit(msg.data.split(' ')[0])
-    def _move_cb(self, msg): self.currentMoveReceived.emit(msg.data)
 
     def send_estop(self, event):
         if self.pub_estop:
@@ -83,55 +83,97 @@ class ROSWorker(QThread):
     def send_game_control(self, command: str):
         if self.pub_game_control:
             self.pub_game_control.publish(String(data=command))
+            
+    def publish_current_move(self, move: str):
+        if self.current_move_pub:
+            self.current_move_pub.publish(String(data=move))
+
 
 class ChessboardWidget(QWidget):
+    moveSelected = pyqtSignal(str)  # emits UCI move string like "e2e4"
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.fen = chess.STARTING_BOARD_FEN
         self.current_move = ''
         self.square_size = 60
         self.setMinimumSize(self.square_size * 8, self.square_size * 8)
+        self.selected_squares = []  # to hold square names like "e2", "e4"
+        self.block_move = False
 
     def update_board(self, fen: str):
-        self.fen = fen; self.update()
+        self.fen = fen
+        self.current_move = ''
+        self.selected_squares.clear()
+        self.update()
 
     def highlight_move(self, move: str):
-        self.current_move = move; self.update()
+        self.current_move = move
+        self.update()
 
     def paintEvent(self, event):
         painter = QPainter(self)
         board = self._fen_to_matrix(self.fen)
         for rank in range(8):
             for file in range(8):
-                color = QColor(240,217,181) if (rank+file)%2==0 else QColor(181,136,99)
-                painter.fillRect(file*self.square_size, rank*self.square_size,
-                                  self.square_size, self.square_size, color)
+                color = QColor(240,217,181) if (rank + file) % 2 == 0 else QColor(181,136,99)
+                x = file * self.square_size
+                y = rank * self.square_size
+                painter.fillRect(x, y, self.square_size, self.square_size, color)
+
+                square_name = self._index_to_square(file, rank)
+                if square_name in self.selected_squares:
+                    painter.setBrush(QColor(0, 255, 0, 100))
+                    painter.drawRect(x, y, self.square_size, self.square_size)
+
                 piece = board[rank][file]
                 if piece:
-                    symbol = default_piece_unicode.get(piece, '')
+                    symbol = chess.UNICODE_PIECE_SYMBOLS.get(piece, '')
                     painter.setFont(QFont('Arial', 32))
-                    painter.drawText(file*self.square_size, rank*self.square_size,
-                                     self.square_size, self.square_size,
-                                     Qt.AlignCenter, symbol)
-        if len(self.current_move)==4:
-            sf, sr = ord(self.current_move[0])-97, 8-int(self.current_move[1])
-            ef, er = ord(self.current_move[2])-97, 8-int(self.current_move[3])
-            pen = painter.pen(); pen.setWidth(3); pen.setColor(QColor(255,0,0)); painter.setPen(pen)
-            painter.drawRect(sf*self.square_size, sr*self.square_size,
-                             self.square_size, self.square_size)
-            painter.drawRect(ef*self.square_size, er*self.square_size,
-                             self.square_size, self.square_size)
+                    painter.drawText(x, y, self.square_size, self.square_size, Qt.AlignCenter, symbol)
+
+        if len(self.current_move) == 4:
+            sf, sr = ord(self.current_move[0]) - 97, 8 - int(self.current_move[1])
+            ef, er = ord(self.current_move[2]) - 97, 8 - int(self.current_move[3])
+            pen = painter.pen()
+            pen.setWidth(3)
+            pen.setColor(QColor(255, 0, 0))
+            painter.setPen(pen)
+            painter.drawRect(sf * self.square_size, sr * self.square_size, self.square_size, self.square_size)
+            painter.drawRect(ef * self.square_size, er * self.square_size, self.square_size, self.square_size)
+
+    def mousePressEvent(self, event):
+        if self.block_move: 
+            return
+        file = event.x() // self.square_size
+        rank = event.y() // self.square_size
+        square = self._index_to_square(file, rank)
+        self.selected_squares.append(square)
+
+        if len(self.selected_squares) == 2:
+            move = self.selected_squares[0] + self.selected_squares[1]
+            self.current_move = move
+            self.moveSelected.emit(move)  # emit signal
+            self.selected_squares.clear()
+
+        self.update()
+
+    def _index_to_square(self, file: int, rank: int) -> str:
+        """Convert (file, rank) indices to algebraic notation."""
+        return f"{chr(97 + file)}{8 - rank}"
 
     def _fen_to_matrix(self, fen: str):
+        """Convert FEN board part into 2D array."""
+        fen = fen.split()[0]  # ignore move/turn info
         rows = fen.split('/')
-        board=[]
+        board = []
         for row in rows:
-            line=[]
+            line = []
             for c in row:
-                line.extend(['']*int(c) if c.isdigit() else [c])
+                line.extend([''] * int(c) if c.isdigit() else [c])
             board.append(line)
         return board
-
+    
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -148,12 +190,16 @@ class MainWindow(QMainWindow):
         # Status Panel
         status = QGroupBox('Status')
         form = QFormLayout()
-        self.mode_label = QLabel('Unknown')
+        self.mode_label = QLabel('PVP')
         self.joint_label = QLabel('---')
         self.gripper_label = QLabel('Unknown')
+        self.movestatus_label = QLabel("Unkown")
+        self.current_side_label = QLabel("White")
         form.addRow('Mode:', self.mode_label)
         form.addRow('Joints:', self.joint_label)
         form.addRow('Gripper:', self.gripper_label)
+        form.addRow("Last move status:", self.movestatus_label)
+        form.addRow("Current side", self.current_side_label)
         status.setLayout(form)
         layout.addWidget(status)
 
@@ -205,6 +251,40 @@ class MainWindow(QMainWindow):
         self.pause_button.setEnabled(False)
         self.stop_button.setEnabled(False)
 
+    def handle_current_move(self, msg: URChessMoveStatus):
+        self.chessboard.block_move = False
+        if msg.moveinfo:
+            self.chessboard.highlight_move(msg.moveinfo.move_uci)
+            self.current_side_label.setText('White' if msg.moveinfo.turn else "Black")
+        else:
+            self.chessboard.highlight_move("")
+
+        if msg.status == URChessMoveStatus.STATUS_FAILED:
+            self.movestatus_label.setText("FAILED")
+        elif msg.status == URChessMoveStatus.STATUS_SUCCESS:
+            self.movestatus_label.setText("SUCCESS")
+            self.chessboard.highlight_move("")
+            if msg.moveinfo:
+                if msg.moveinfo.is_checkmate:
+                    QMessageBox.information(
+                        self,
+                        "Checkmate",
+                        f"{'White' if msg.moveinfo.turn else 'Black'} has delivered a checkmate! Good game!"
+                    )
+                elif msg.moveinfo.is_check:
+                    QMessageBox.information(
+                        self,
+                        "Check",
+                        f"{'White' if msg.moveinfo.turn else 'Black'} has delivered a check!"
+                    )
+        elif msg.status == URChessMoveStatus.STATUS_IN_PROGRESS:
+            self.movestatus_label.setText("IN PROGRESS")
+            self.chessboard.block_move = True
+        elif msg.status == URChessMoveStatus.STATUS_INVALID_MOVE:
+            self.movestatus_label.setText("INVALID: " + msg.message)
+            self.chessboard.selected_squares.clear()
+            
+        
     def _connect_signals(self):
         w = self.ros_worker
         w.modeReceived.connect(lambda m: self.mode_label.setText(m))
@@ -212,12 +292,14 @@ class MainWindow(QMainWindow):
         w.gripperStateReceived.connect(lambda g: self.gripper_label.setText('Open' if g == 'open' else 'Closed'))
 
         w.fenUpdated.connect(self.chessboard.update_board)
-        w.currentMoveReceived.connect(self.chessboard.highlight_move)
+        w.currentMoveReceived.connect(self.handle_current_move)
 
         self.estop_button.clicked.connect(lambda: w.send_estop("stop"))
         self.play_button.clicked.connect(self.on_play)
         self.pause_button.clicked.connect(self.on_pause)
         self.stop_button.clicked.connect(self.on_stop)
+        
+        self.chessboard.moveSelected.connect(w.publish_current_move)
 
     def on_play(self):
         self.ros_worker.send_game_control('play')

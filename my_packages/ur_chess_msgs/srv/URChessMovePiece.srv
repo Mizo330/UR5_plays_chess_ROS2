@@ -1,6 +1,4 @@
-string uci
-bool is_capture
-bool capturer_color # True = White, False = Black
+URChessMoveInfo moveinfo
 ---
 
 string message

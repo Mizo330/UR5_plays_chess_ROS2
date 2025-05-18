@@ -1,136 +1,51 @@
+import os
+import math
+import time
+import yaml
+from typing import Optional
+import numpy as np
+import chess
+
 import rclpy
 import rclpy.executors
 from rclpy.node import Node
-from rclpy.action import ActionClient
-from moveit_msgs.action import MoveGroup, MoveGroupSequence
-from moveit_msgs.action._move_group import MoveGroup_FeedbackMessage
-from moveit_msgs.msg import MotionPlanRequest, Constraints, PositionConstraint, OrientationConstraint, WorkspaceParameters, JointConstraint, MoveItErrorCodes, MotionSequenceItem
+from rclpy.callback_groups import ReentrantCallbackGroup
+
+from std_msgs.msg import String, Bool
 from geometry_msgs.msg import PoseStamped, Quaternion, Pose, Point
 from sensor_msgs.msg import JointState
 from shape_msgs.msg import SolidPrimitive
-from ur_chess.misc.math_helpers import make_vector3, make_quaternion, make_point, Waypoint
-from ur_chess_msgs.srv import URChessMovePiece
-from ur_chess_msgs.msg import URChessMoveResult
-import math
-import yaml
-import os
-from typing import Optional
-from rclpy.callback_groups import ReentrantCallbackGroup
-from rclpy.duration import Duration
-from action_msgs.msg import GoalStatus
-import time
-import threading
-from ur_chess.misc.text_color import TextColor
-# For configuration
+from moveit_msgs.msg import (
+    MotionPlanRequest,
+    Constraints,
+    PositionConstraint,
+    OrientationConstraint,
+    WorkspaceParameters,
+    JointConstraint,
+    MoveItErrorCodes,
+    MotionSequenceItem
+)
 from moveit_configs_utils import MoveItConfigsBuilder
 from moveit.utils import create_params_file_from_dict
-from ament_index_python import get_package_share_directory
-from std_msgs.msg import String, Bool
-import threading
-from queue import Queue
-from moveit_msgs.msg import Constraints, JointConstraint
-# moveit python library
 from moveit.core.robot_state import RobotState
-from moveit.planning import MoveItPy, PlanningComponent, TrajectoryExecutionManager, PlanRequestParameters, PlanningSceneMonitor
+from moveit.planning import (
+    MoveItPy,
+    PlanningComponent,
+    TrajectoryExecutionManager,
+    PlanRequestParameters,
+    PlanningSceneMonitor
+)
 from moveit.core.planning_interface import MotionPlanResponse
 from moveit.core.robot_trajectory import RobotTrajectory
 from moveit.core.controller_manager import ExecutionStatus
-import numpy as np
-from moveit_msgs.msg import CollisionObject
-from moveit_msgs.msg import AttachedCollisionObject
-import chess
-from moveit_msgs.msg import ObjectColor
-from std_msgs.msg import ColorRGBA
-CHESSPIECE_CLEARANCE = 0.1  # Clearance above the chess piece
 
-class ChessPiece():
-    def __init__(self, start_pos, color, start_pose: Pose, size):
-        self.id = start_pos
-        self.current_pos = start_pos
-        self.color = color
-        self.size = size
-        self.pose = start_pose
+from ur_chess.misc.math_helpers import make_vector3, make_quaternion, make_point, Waypoint
+from ur_chess.misc.moveit_col_objects import ChessPiece, create_chess_environment
+from ur_chess.misc.text_color import TextColor
+from ur_chess_msgs.srv import URChessMovePiece
+from ur_chess_msgs.msg import URChessMoveInfo
 
-        if self.color == "white":
-            clr = ColorRGBA(r=1.0, g=1.0, b=1.0, a=1.0)
-        elif self.color == "black":
-            clr = ColorRGBA(r=0.0, g=0.0, b=0.0, a=1.0)
-        else:
-            raise ValueError("Invalid piece color. Use 'white' or 'black'.")
-
-        self.object_color = ObjectColor(id=self.id, color=clr)
-
-    def _create_collision_object(self, pose: Pose):
-        obj = CollisionObject()
-        obj.id = self.id
-        obj.header.frame_id = "base_link"
-        obj.primitives = [SolidPrimitive(type=SolidPrimitive.CYLINDER, dimensions=self.size)]
-        obj.primitive_poses = [pose]
-        obj.operation = CollisionObject.ADD
-        return obj
-
-    def add_to_scene(self, planning_scene_monitor):
-        """Add the chess piece to the planning scene."""
-        with planning_scene_monitor.read_write() as scene:
-            obj = self._create_collision_object(self.pose)
-            scene.apply_collision_object(obj, self.object_color)
-            scene.current_state.update()
-
-    def remove_from_scene(self, planning_scene_monitor):
-        """Remove the chess piece from the planning scene."""
-        with planning_scene_monitor.read_write() as scene:
-            obj = CollisionObject()
-            obj.id = self.id
-            obj.header.frame_id = "base_link"
-            obj.operation = CollisionObject.REMOVE
-            scene.apply_collision_object(obj)
-            scene.current_state.update()
-
-    def attach_to_robot(self, planning_scene_monitor):
-        """Attach the chess piece to the robot (remove from world first)."""
-        with planning_scene_monitor.read_write() as scene:
-            # Remove from world if present
-            remove_obj = CollisionObject()
-            remove_obj.id = self.id
-            remove_obj.header.frame_id = "base_link"
-            remove_obj.operation = CollisionObject.REMOVE
-            scene.apply_collision_object(remove_obj)
-
-            # Create new object to attach
-            attach_obj = self._create_collision_object(self.pose)
-            attached = AttachedCollisionObject()
-            attached.link_name = "end_effector_link"
-            attached.object = attach_obj
-            attached.object.operation = CollisionObject.ADD
-            attached.touch_links = ["rh_p12_rn_l1", "rh_p12_rn_l2", "rh_p12_rn_r1", "rh_p12_rn_r2"]
-            scene.process_attached_collision_object(attached)
-            scene.current_state.update()
-
-    def detach_from_robot(self, planning_scene_monitor, new_pos_uci, new_pos_xyz):
-        """Detach and reinsert piece at new world pose."""
-        with planning_scene_monitor.read_write() as scene:
-            # Detach
-            dummy = CollisionObject()
-            dummy.id = self.id
-            dummy.header.frame_id = "base_link"
-            dummy.operation = CollisionObject.REMOVE
-
-            detach_obj = AttachedCollisionObject()
-            detach_obj.link_name = "end_effector_link"
-            detach_obj.object = dummy
-            scene.process_attached_collision_object(detach_obj)
-
-            # Add to world at new pose
-            new_pose = Pose()
-            new_pose.position = make_point(new_pos_xyz[0], new_pos_xyz[1], self.pose.position.z)
-            new_pose.orientation.w = 1.0  # Default orientation
-
-            world_obj = self._create_collision_object(new_pose)
-            scene.apply_collision_object(world_obj, self.object_color)
-            self.pose = new_pose
-            self.current_pos = new_pos_uci
-
-            scene.current_state.update()
+from ament_index_python import get_package_share_directory
         
 class MoveItCommander(Node):
 
@@ -150,7 +65,8 @@ class MoveItCommander(Node):
         self.corner_a1 = board_layout['a1']
         self.tile_size = board_layout['tile_size']
         self.board_orientation = board_layout['orientation']
-
+        self.chesspiece_clearance = 0.1 # Clearance above the chess piece where the arm should move across.
+        
         self.get_logger().info("Setting up moveit config.")
         moveit_config_builder = MoveItConfigsBuilder("ur")
         moveit_config_builder.moveit_cpp(self.get_parameter("moveit_cpp_cfg").value) 
@@ -182,8 +98,6 @@ class MoveItCommander(Node):
         # Use ReentrantCallbackGroup for managing callbacks concurrently
         self._callback_group = ReentrantCallbackGroup()
         
-        # Create a publisher for the feedback messages
-        self.move_res_pub = self.create_publisher(URChessMoveResult,  '/ur_chess/move_result', 10, callback_group=self._callback_group)
         # Create a subscriber for the control messages 
         self.control_sub = self.create_subscription(
             String,
@@ -201,16 +115,19 @@ class MoveItCommander(Node):
     def create_chess_pieces(self):
         """Create the chess pieces to be used in the planning scene."""
 
-        corner_a1 = self.corner_a1
+        a1_0 = self.corner_a1
         tile_size = self.tile_size
-        board_orientation = self.board_orientation
+        o = self.board_orientation
 
+        self.get_logger().info("Creating environment")
+        create_chess_environment(self.planning_scene_monitor,a1_0,o,tile_size)
         # Map from file/rank to board indices
         files = 'abcdefgh'
         size = [tile_size * 1.5, tile_size / 4]
 
         board = chess.Board()
         self.chess_pieces = []
+        self.get_logger().info("Creating chess pieces")
         for square in chess.SQUARES:
             piece = board.piece_at(square)
             if piece:
@@ -223,28 +140,16 @@ class MoveItCommander(Node):
                 piece_id = f"{file_letter}{rank+1}"
 
                 pose = Pose()
-                pose.position.x = corner_a1[0] + board_orientation[0] * ((file * tile_size) + tile_size / 2)
-                pose.position.y = corner_a1[1] + board_orientation[1] * ((rank * tile_size) + tile_size / 2)
-                pose.position.z = corner_a1[2]
+                pose.position.x = a1_0[0] + o[0] * ((file * tile_size) + tile_size / 2)
+                pose.position.y = a1_0[1] + o[1] * ((rank * tile_size) + tile_size / 2)
+                pose.position.z = a1_0[2] + size[0]/2 #so that the base of the piece is at z_0
 
                 chess_piece = ChessPiece(piece_id, color_name, pose, size)
                 chess_piece.add_to_scene(self.planning_scene_monitor)
                 self.chess_pieces.append(chess_piece)
-                
-        self.get_logger().info("Creating table")
-        with self.planning_scene_monitor.read_write() as scene:            
-            #create a table
-            table = CollisionObject()
-            table.id = "table"
-            table.header.frame_id = "base_link"
-            table.primitives = [SolidPrimitive(type=SolidPrimitive.BOX, dimensions=[0.5, 0.5, 0.05])]
-            #TODO make this dynamic
-            table.primitive_poses.append(Pose(position=make_point(-0.125, -0.425, 0.345)))
-            table.operation = CollisionObject.ADD
-            table_color = ObjectColor(id=table.id, color=ColorRGBA(r=0.7, g=0.7, b=0.1, a=1.0))
-            scene.apply_collision_object(table, table_color)
-            scene.current_state.update()  # Important to ensure the scene is updated
             
+            
+    #TODO fix        
     def control_callback(self, msg):
         command = msg.data.lower()
         if command == 'play':
@@ -261,7 +166,6 @@ class MoveItCommander(Node):
         elif command == 'stop':
             self.get_logger().info("Stopping execution")
             self.execution_manager.stop_execution()
-            self.trajectories.clear()
         else:
             self.get_logger().warn(f'Unknown game control command: {command}')  
                 
@@ -304,73 +208,32 @@ class MoveItCommander(Node):
                 raise RuntimeError("Planning failed")
         return None
     
-    #! unused        
-    def motion_callback(self, msg: ExecutionStatus):
-        if msg.status == 'SUCCEEDED':
-            self.get_logger().info("Arrived home successfully")
-            self.move_res_pub.publish(URChessMoveResult(success=True, message="Arrived home successfully"))
-        elif msg.status == 'ABORTED':
-            self.get_logger().error("Execution aborted")
-            self.move_res_pub.publish(URChessMoveResult(success=False, message="Execution aborted"))
-        elif msg.status == 'PREEMPTED':
-            self.get_logger().warn("Process preempted")
-            self.move_res_pub.publish(URChessMoveResult(success=False, message="Process preempted"))
-    
     def move_piece_callback(self, request:URChessMovePiece.Request, response:URChessMovePiece.Response):
         """Callback for the move_piece service."""
-        self.get_logger().info('Received request to move to position')
+        self.get_logger().info('Received MovePiece request')
+        moveinfo = request.moveinfo
         try:
-            if request.is_capture:
-                self.get_logger().info('Capture move detected')
-                piece = self.find_chess_piece(request.uci[2:4])
-                if piece is not None:
-                    start_x, start_y, start_z = self.square_to_xyz(request.uci[2:4])
-                    end_pos, end_place = self.capture_to_xyz(request.capturer_color)
-                    end_x, end_y, end_z = end_pos
-                    trajectories = self.plan_grab_piece(start_x,start_y,start_z)
-                    for traj in trajectories:
-                        self.execution_manager.push(traj, controllers=[])
-                    self.execution_manager.execute_and_wait(auto_clear=True)
-                    
-                    piece.attach_to_robot(self.planning_scene_monitor)
-
-                    trajectories = self.plan_move_piece(start_x, start_y, start_z, end_x, end_y, end_z)
-                    for traj in trajectories:
-                        self.execution_manager.push(traj, controllers=[])
-                    self.execution_manager.execute_and_wait(auto_clear=True)
-
-                    piece.detach_from_robot(self.planning_scene_monitor, end_place, [end_x, end_y])    
-                    
-                    trajectories = self.plan_move_home(end_x, end_y, end_z)
-                    for traj in trajectories:
-                        self.execution_manager.push(traj, controllers=[])
-                    self.execution_manager.execute_and_wait(auto_clear=True)
-                else:
-                    self.get_logger().warn(f'No piece found at {request.uci[2:4]} to capture')
+            special_move = moveinfo.special_move
+            if special_move != URChessMoveInfo.SPECIAL_MOVE_NONE:
+                if special_move == URChessMoveInfo.SPECIAL_MOVE_CAPTURE:
+                    self.get_logger().info('Handling capture')
+                    self.handle_capture(moveinfo)
+                elif special_move == URChessMoveInfo.SPECIAL_MOVE_KINGSIDE_CASTLE: 
+                    self.get_logger().info('Handling kingside castle')
+                    self.handle_castle(moveinfo)
+                elif special_move == URChessMoveInfo.SPECIAL_MOVE_QUEENSIDE_CASTLE: 
+                    self.get_logger().info('Handling queenside castle')
+                    self.handle_castle(moveinfo)
+                elif special_move == URChessMoveInfo.SPECIAL_MOVE_EN_PASSANT: 
+                    self.get_logger().info('Handling en passant')
+                    self.handle_en_passant(moveinfo)
             
             # Get the start and end positions from the request
-            start_x, start_y, start_z = self.square_to_xyz(request.uci[:2])
-            end_x, end_y, end_z = self.square_to_xyz(request.uci[2:4])
-            piece = self.find_chess_piece(request.uci[:2])
+            start_pos = self.square_to_xyz(moveinfo.move_uci[:2])
+            end_pos = self.square_to_xyz(moveinfo.move_uci[2:4])
+            piece = self.find_chess_piece(moveinfo.move_uci[:2])
 
-            trajectories = self.plan_grab_piece(start_x,start_y,start_z)
-            for traj in trajectories:
-                self.execution_manager.push(traj, controllers=[])
-            self.execution_manager.execute_and_wait(auto_clear=True)
-            
-            piece.attach_to_robot(self.planning_scene_monitor)
-
-            trajectories = self.plan_move_piece(start_x, start_y, start_z, end_x, end_y, end_z)
-            for traj in trajectories:
-                self.execution_manager.push(traj, controllers=[])
-            self.execution_manager.execute_and_wait(auto_clear=True)
-
-            piece.detach_from_robot(self.planning_scene_monitor, request.uci[2:4], [end_x, end_y])    
-            
-            trajectories = self.plan_move_home(end_x, end_y, end_z)
-            for traj in trajectories:
-                self.execution_manager.push(traj, controllers=[])
-            self.execution_manager.execute_and_wait(auto_clear=True)
+            self.pick_and_place(start_pos,end_pos,piece)
 
             response.success = True
             response.message = 'Succesful movement.'
@@ -382,7 +245,65 @@ class MoveItCommander(Node):
             response.success = False
             return response     
 
+    def pick_and_place(self,start_pos,end_pos,piece:ChessPiece):
+        start_x, start_y, start_z = start_pos
+        end_x, end_y, end_z = end_pos
+        trajectories = self.plan_grab_piece(start_x,start_y,start_z)
+        for traj in trajectories:
+            self.execution_manager.push(traj, controllers=[])
+        self.execution_manager.execute_and_wait(auto_clear=True)
+        
+        piece.attach_to_robot(self.planning_scene_monitor)
 
+        trajectories = self.plan_move_piece(start_x, start_y, start_z, end_x, end_y, end_z)
+        for traj in trajectories:
+            self.execution_manager.push(traj, controllers=[])
+        self.execution_manager.execute_and_wait(auto_clear=True)
+        
+        new_square = self.xy_to_square(end_x, end_y)
+        piece.detach_from_robot(self.planning_scene_monitor, new_square, [end_x, end_y])    
+            
+        trajectories = self.plan_move_home(end_x, end_y, end_z)
+        for traj in trajectories:
+            self.execution_manager.push(traj, controllers=[])
+        self.execution_manager.execute_and_wait(auto_clear=True)
+        
+    def handle_capture(self, moveinfo: URChessMoveInfo):
+        piece = self.find_chess_piece(moveinfo.move_uci[2:4])
+        if piece is not None:
+            start_pos = self.square_to_xyz(moveinfo.move_uci[2:4])
+            graveyard_pos, graveyard_sqaure = self.get_graveyard_pos(moveinfo.turn)
+            self.pick_and_place(start_pos,graveyard_pos,piece)
+        else:
+            self.get_logger().warn(f'No piece found at {moveinfo.move_uci[2:4]} to capture')
+            
+    def handle_castle(self, moveinfo: URChessMoveInfo):
+        if moveinfo.turn: #White
+            if moveinfo.special_move == URChessMoveInfo.SPECIAL_MOVE_KINGSIDE_CASTLE:
+                move_uci = 'h1f1' #move white kinside rook to castling pos
+            else: #Queenside
+                move_uci = 'a1d1'
+        else: #Black
+            if moveinfo.special_move == URChessMoveInfo.SPECIAL_MOVE_KINGSIDE_CASTLE:
+                move_uci = 'h8f8'
+            else:
+                move_uci = 'a8d8'
+        rook = self.find_chess_piece(move_uci[:2])
+        start_pos = self.square_to_xyz(move_uci[:2])
+        end_pos = self.square_to_xyz(move_uci[2:4])
+        self.pick_and_place(start_pos,end_pos,rook)
+        
+    def handle_en_passant(self,moveinfo: URChessMoveInfo):
+        capturer_end = moveinfo.move_uci[2:4]
+        captured_square = capturer_end[0] + str(int(capturer_end[1])-1) if moveinfo.turn else capturer_end[0] + str(int(capturer_end[1])+1)
+        piece = self.find_chess_piece(captured_square)
+        if piece is not None:
+            start_pos = self.square_to_xyz(captured_square)
+            graveyard_pos, graveyard_sqaure = self.get_graveyard_pos(moveinfo.turn)
+            self.pick_and_place(start_pos,graveyard_pos,piece)
+        else:
+            self.get_logger().warn(f'No piece found at {moveinfo.move_uci[2:4]} to capture')
+        
     def find_chess_piece(self, square: str) -> Optional[ChessPiece]:
         """Find the chess piece at the given square."""
         for piece in self.chess_pieces:
@@ -390,8 +311,7 @@ class MoveItCommander(Node):
                 return piece    
         return None
     
-    
-    def capture_to_xyz(self, capturer_color: str):
+    def get_graveyard_pos(self, capturer_color: str):
         if capturer_color == True: #white
             self.white_captures += 1
             if self.white_captures < 8:
@@ -420,12 +340,26 @@ class MoveItCommander(Node):
         x = self.corner_a1[0] + self.board_orientation[0]*(file * self.tile_size + self.tile_size/2)
         y = self.corner_a1[1] + self.board_orientation[1]*(rank * self.tile_size + self.tile_size/2)
         # z could be constant above board
-        z = self.corner_a1[2] + self.tile_size*0.75
+        z = self.corner_a1[2] + self.tile_size*1.6
         return round(x, 3), round(y, 3), round(z, 3)
+    
+    def xy_to_square(self, x: float, y: float) -> str:
+        dx = x - self.corner_a1[0]
+        dy = y - self.corner_a1[1]
+
+        file_pos = dx / self.tile_size if self.board_orientation[0] > 0 else -dx / self.tile_size
+        rank_pos = dy / self.tile_size if self.board_orientation[1] > 0 else -dy / self.tile_size
+
+        file = math.floor(file_pos)
+        rank = math.floor(rank_pos)
+
+        file_char = chr(ord('a') + file)
+        square = f"{file_char}{rank + 1}"
+        return square
     
     def plan_grab_piece(self,start_x, start_y, start_z):
         waypoints = []
-        waypoints.append(Waypoint(position=make_point(start_x,start_y,start_z+CHESSPIECE_CLEARANCE),gripper="open")) #above piece
+        waypoints.append(Waypoint(position=make_point(start_x,start_y,start_z+self.chesspiece_clearance),gripper="open")) #above piece
         waypoints.append(Waypoint(position=make_point(start_x,start_y,start_z),gripper="close")) #at the piece
         trajectories = self.plan_move_trajectory(waypoints)
         return trajectories
@@ -433,15 +367,15 @@ class MoveItCommander(Node):
     def plan_move_piece(self,start_x,start_y,start_z,end_x,end_y,end_z):
         waypoints = []
         waypoints.append(Waypoint(position=make_point(start_x,start_y,start_z)))
-        waypoints.append(Waypoint(position=make_point(start_x,start_y,start_z+CHESSPIECE_CLEARANCE)))
-        waypoints.append(Waypoint(position=make_point(end_x,end_y,end_z+CHESSPIECE_CLEARANCE)))
+        waypoints.append(Waypoint(position=make_point(start_x,start_y,start_z+self.chesspiece_clearance)))
+        waypoints.append(Waypoint(position=make_point(end_x,end_y,end_z+self.chesspiece_clearance)))
         waypoints.append(Waypoint(position=make_point(end_x,end_y,end_z), gripper="open"))
         trajectories = self.plan_move_trajectory(waypoints)
         return trajectories
 
     def plan_move_home(self,end_x,end_y,end_z):
         waypoints = []
-        waypoints.append(Waypoint(position=make_point(end_x,end_y,end_z+CHESSPIECE_CLEARANCE)))
+        waypoints.append(Waypoint(position=make_point(end_x,end_y,end_z+self.chesspiece_clearance)))
         waypoints.append(Waypoint(named_position="chess_home"))
         trajectories = self.plan_move_trajectory(waypoints)
 
@@ -532,39 +466,37 @@ class MoveItCommander(Node):
         # jc2.tolerance_below = math.radians(75)
         # jc2.weight = 1.0
         
-        jc3 = JointConstraint()
-        jc3.joint_name = "wrist_1_joint"
-        jc3.position = math.radians(-110)
-        jc3.tolerance_above = math.radians(100)
-        jc3.tolerance_below = math.radians(70)
-        jc3.weight = 1.0
-        
-        jc4 = JointConstraint()
-        jc4.joint_name = "wrist_2_joint"
-        jc4.position = math.radians(90)
-        jc4.tolerance_above = math.radians(100)
-        jc4.tolerance_below = math.radians(100)
-        jc4.weight = 1.0
-        
-        jc2 = JointConstraint()
-        jc2.joint_name = "wrist_3_joint"
-        jc2.position = math.radians(135)
-        jc2.tolerance_above = math.radians(90)
-        jc2.tolerance_below = math.radians(90)
-        jc2.weight = 1.0
-        
-        jc5 = JointConstraint()
-        jc5.joint_name = "shoulder_pan_joint"
-        jc5.position = math.radians(90)
-        jc5.tolerance_above = math.radians(45)
-        jc5.tolerance_below = math.radians(45)
-        jc5.weight = 1.0
-        # Add the joint constraint to the Constraints message
-        #joint_constraints.joint_constraints.append(jc1)
-        joint_constraints.joint_constraints.append(jc2)
-        joint_constraints.joint_constraints.append(jc3)
-        joint_constraints.joint_constraints.append(jc4)
-        joint_constraints.joint_constraints.append(jc5)
+        jc = JointConstraint()
+        jc.joint_name = "wrist_1_joint"
+        jc.position = math.radians(-110)
+        jc.tolerance_above = math.radians(100)
+        jc.tolerance_below = math.radians(70)
+        jc.weight = 1.0
+        joint_constraints.joint_constraints.append(jc)
+
+        jc = JointConstraint()
+        jc.joint_name = "wrist_2_joint"
+        jc.position = math.radians(90)
+        jc.tolerance_above = math.radians(100)
+        jc.tolerance_below = math.radians(100)
+        jc.weight = 1.0
+        joint_constraints.joint_constraints.append(jc)
+
+        jc = JointConstraint()
+        jc.joint_name = "wrist_3_joint"
+        jc.position = math.radians(135)
+        jc.tolerance_above = math.radians(90)
+        jc.tolerance_below = math.radians(90)
+        jc.weight = 1.0
+        joint_constraints.joint_constraints.append(jc)
+
+        jc = JointConstraint()
+        jc.joint_name = "shoulder_pan_joint"
+        jc.position = math.radians(90)
+        jc.tolerance_above = math.radians(45)
+        jc.tolerance_below = math.radians(45)
+        jc.weight = 1.0
+        joint_constraints.joint_constraints.append(jc)
         
         return joint_constraints
         

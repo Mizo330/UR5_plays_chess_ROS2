@@ -41,10 +41,10 @@
       <joint name="wrist_3_joint" value="-0.11" />
     </group_state>
     <group_state name="chess_home" group="ur_manipulator">
-      <joint name="elbow_joint" value="-1.39626" />
-      <joint name="shoulder_lift_joint" value="-1.39626" />
-      <joint name="shoulder_pan_joint" value="1.5707" />
-      <joint name="wrist_1_joint" value="-1.91986" />
+      <joint name="elbow_joint" value="-1.16937" /> <!-- -67deg -->
+      <joint name="shoulder_lift_joint" value="-1.55334" /> <!-- -89deg -->
+      <joint name="shoulder_pan_joint" value="1.5707" /> <!-- 90deg -->
+      <joint name="wrist_1_joint" value="-1.97222" /> <!-- -113deg -->
       <joint name="wrist_2_joint" value="1.5707" />
       <joint name="wrist_3_joint" value="1.5707" />
     </group_state>
