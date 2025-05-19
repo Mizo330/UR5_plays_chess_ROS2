@@ -16,7 +16,6 @@ from PyQt5.QtGui import QPainter, QColor, QFont
 import chess
 from ur_chess_msgs.msg import URChessMoveInfo, URChessMoveStatus
 
-
 class ROSWorker(QThread):
     jointStateReceived = pyqtSignal(object)
     poseReceived = pyqtSignal(object)

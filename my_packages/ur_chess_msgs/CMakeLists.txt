@@ -14,6 +14,7 @@ find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/URChessMovePiece.srv"
+  "srv/URChessMoveNamedPos.srv"
   "msg/URChessMoveResult.msg"
   "msg/URChessMoveInfo.msg"
   "msg/URChessMoveStatus.msg"

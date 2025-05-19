@@ -42,10 +42,11 @@ from moveit.core.controller_manager import ExecutionStatus
 from ur_chess.misc.math_helpers import make_vector3, make_quaternion, make_point, Waypoint
 from ur_chess.misc.moveit_col_objects import ChessPiece, create_chess_environment
 from ur_chess.misc.text_color import TextColor
-from ur_chess_msgs.srv import URChessMovePiece
+from ur_chess_msgs.srv import URChessMovePiece, URChessMoveNamedPos
 from ur_chess_msgs.msg import URChessMoveInfo
 
 from ament_index_python import get_package_share_directory
+        
         
 class MoveItCommander(Node):
 
@@ -58,6 +59,7 @@ class MoveItCommander(Node):
         self.declare_parameter("moveit_controller_cfg",get_package_share_directory("ur_moveit_config") + "/config/moveit_controllers.yaml")
         self.declare_parameter("board_layout", get_package_share_directory("ur_chess") + "/config/board_layout.yaml")
 
+        self.max_plan_tries = 10 #TODO make this a param
         # Load the board layout from the YAML file
         board_layout_path = self.get_parameter("board_layout").value
         with open(board_layout_path, 'r') as f:
@@ -99,15 +101,8 @@ class MoveItCommander(Node):
         self._callback_group = ReentrantCallbackGroup()
         
         # Create a subscriber for the control messages 
-        self.control_sub = self.create_subscription(
-            String,
-            '/ur_chess/game_control',
-            self.control_callback,
-            10,
-            callback_group=self._callback_group
-        )
+        self.create_service(URChessMoveNamedPos, '/ur_chess/move_named_pos', self.move_named_pos_cb, callback_group=self._callback_group)
         self.create_service(URChessMovePiece, '/ur_chess/move_piece', self.move_piece_callback, callback_group=self._callback_group)
-        
         self.get_logger().info("Created service for move_piece")
 
         self.get_logger().info(TextColor.color_text('MoveItCommander initialized', TextColor.OKCYAN))
@@ -150,25 +145,23 @@ class MoveItCommander(Node):
             
             
     #TODO fix        
-    def control_callback(self, msg):
-        command = msg.data.lower()
-        if command == 'play':
-            last_exec_status = self.execution_manager.get_last_execution_status().status
-            self.ur_commander_arm.set_start_state_to_current_state()
-            self.ur_commander_arm.set_goal_state(configuration_name="chess_home")
-            self.plan_and_execute(self.ur_commander_arm, sleep_time=2)
-            # if last_exec_status == "PREEMPTED" and len(self.trajectories) > 0:
-            #     self.get_logger().info("Execution was preempted, restarting previous trajectory")
-            #     self.push_and_execute(self.trajectories)
-        elif command == 'pause':
-            self.get_logger().info("Pausing execution")
-            self.execution_manager.stop_execution()
-        elif command == 'stop':
-            self.get_logger().info("Stopping execution")
-            self.execution_manager.stop_execution()
+    def move_named_pos_cb(self, request : URChessMoveNamedPos.Request,response:URChessMoveNamedPos.Response):
+        named_pos = request.named_posisiton
+        self.ur_commander_arm.set_start_state_to_current_state()
+        is_valid = self.ur_commander_arm.set_goal_state(configuration_name=named_pos)
+        if not is_valid:
+            response.success= False
+            response.message = f"No predefined joint state found for target name '{named_pos}'"
+            return response
+        
+        result = self.plan_and_execute(self.ur_commander_arm, sleep_time=2)
+        if result:
+            response.success= True
         else:
-            self.get_logger().warn(f'Unknown game control command: {command}')  
-                
+            response.success = False
+            response.message = 'Failed to plan trajectory. Probably something is blocking the robot.'
+        return response
+    
     def plan_and_execute(self, planning_component, single_plan_parameters=None, multi_plan_parameters=None, sleep_time=0.0):
         """Plan and execute trajectory (blocking)."""
         for _ in range(10):
@@ -185,13 +178,16 @@ class MoveItCommander(Node):
                 robot_trajectory = plan_result.trajectory
                 self.ur_commander.execute(robot_trajectory, controllers=[])
                 time.sleep(sleep_time)
-                break
+                return True
             else:
-                self.get_logger().error("Planning failed")
+                self.get_logger().warn("Planning failed")
+                
+        self.get_logger().error("Failed to plan under 10 tries")
+        return False
     
     def plan_trajectory(self, planning_component, single_plan_parameters=None, multi_plan_parameters=None) -> Optional[MotionPlanResponse]:
         """Plan trajectory (non-blocking)."""
-        for _ in range(5):
+        for _ in range(self.max_plan_tries):
             self.get_logger().info("Planning trajectory")
             if multi_plan_parameters is not None:
                 plan_result = planning_component.plan(multi_plan_parameters=multi_plan_parameters)
@@ -205,7 +201,6 @@ class MoveItCommander(Node):
                 return plan_result
             else:
                 self.get_logger().error("Planning failed")
-                raise RuntimeError("Planning failed")
         return None
     
     def move_piece_callback(self, request:URChessMovePiece.Request, response:URChessMovePiece.Response):
@@ -313,21 +308,21 @@ class MoveItCommander(Node):
     
     def get_graveyard_pos(self, capturer_color: str):
         if capturer_color == True: #white
-            self.white_captures += 1
             if self.white_captures < 8:
                 file = 'i'
             else:
                 file = 'j'
-            rank = self.white_captures % 9
+            rank = 1 + (self.white_captures % 8)
+            self.white_captures += 1
             return self.square_to_xyz(file + str(rank)) , f'{file}{rank}'
         elif capturer_color == False: #black
-            self.black_captures += 1
             if self.black_captures < 8:
                 #Backtick file its before a in unicode
                 file = '`'
             else:
                 file = '_'
-            rank = (9-self.black_captures) % 9
+            self.black_captures += 1
+            rank = 8 - ((self.black_captures) % 8)
             return self.square_to_xyz(file + str(rank)) , f'{file}{rank}'
         else:
             raise ValueError("Invalid piece color. Use True for white or False for black.")
