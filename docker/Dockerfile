@@ -165,6 +165,7 @@ RUN mkdir -p /home/appuser/ros2_ws/src/my_packages && \
 USER appuser
 COPY --chown=appuser:appuser ./my_packages /home/appuser/ros2_ws/src/my_packages
 
+
 #build the workspace
 USER appuser
 RUN cd /home/appuser/ros2_ws && \
@@ -175,7 +176,18 @@ RUN cd /home/appuser/ros2_ws && \
 USER appuser
 RUN echo "source /home/appuser/ros2_ws/install/setup.bash" >> /home/appuser/.bashrc
 
-RUN pip install python-chess --break-system-packages
+
+# Download and extract Stockfish
+USER appuser
+RUN cd /home/appuser/ros2_ws/src &&\
+    wget https://github.com/official-stockfish/Stockfish/releases/latest/download/stockfish-ubuntu-x86-64-avx2.tar && \
+    tar -xvf stockfish-ubuntu-x86-64-avx2.tar && \
+    rm stockfish-ubuntu-x86-64-avx2.tar &&\
+    cd stockfish &&\
+    chmod +x stockfish-ubuntu-x86-64-avx2 
+
+#get chess and stockfish
+RUN pip install python-chess stockfish --break-system-packages
 
 USER appuser
 

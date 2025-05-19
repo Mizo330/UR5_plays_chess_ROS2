@@ -52,5 +52,14 @@ def generate_launch_description():
             output='screen',
         )
     )
+    
+    declared_arguments.append(
+        Node(
+            package=THIS_PACKAGE,
+            executable='stockfish_node',
+            name='stockfish_node',
+            output='screen',
+        )
+    )
 
     return LaunchDescription(declared_arguments)

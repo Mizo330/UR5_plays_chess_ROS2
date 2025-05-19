@@ -30,6 +30,7 @@ setup(
             'moveit_controller = ur_chess.moveit_controller:main',
             'game_manager = ur_chess.game_manager:main',
             'gui = ur_chess.game_gui:main',
+            'stockfish_node = ur_chess.stockfish_node:main',
         ],
     },
 )

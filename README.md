@@ -1,7 +1,7 @@
 # UR5E robot plays chess - ROS2 implementation
 
 ### TODOS:
-- [ ] Make Stockfish chess node
+- [x] Make Stockfish chess node
 - [x] Make a world with chess scene
   - [x] Make it dynamic with params
   - [x] Fix (?) arm speed issue : increase velocity and acc factors in cpp.yaml
@@ -12,8 +12,8 @@
 - [x] Add collision geometry for RVIZ
   - [x] Fully sync with gazebo params (same .yaml)
 - [ ] Refine code
-  - [ ] Fix game controls (play, pause, stop)
-  - [ ] Better error handling
+  - [ ] Fix game controls (~~play~~, pause, stop)
+  - [ ] Better error handling, (make a reset button)
   - [ ] Config for constraints, maybe dynamic based on borad loc.
   - [x] Handle en passant, checkmate
 - [x] Make it playable with gui?
