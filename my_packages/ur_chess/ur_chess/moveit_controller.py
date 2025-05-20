@@ -118,7 +118,7 @@ class MoveItCommander(Node):
         create_chess_environment(self.planning_scene_monitor,a1_0,o,tile_size)
         # Map from file/rank to board indices
         files = 'abcdefgh'
-        size = [tile_size * 1.5, tile_size / 4]
+        size = [tile_size * 1.4, tile_size / 4]
 
         board = chess.Board()
         self.chess_pieces = []
@@ -335,7 +335,7 @@ class MoveItCommander(Node):
         x = self.corner_a1[0] + self.board_orientation[0]*(file * self.tile_size + self.tile_size/2)
         y = self.corner_a1[1] + self.board_orientation[1]*(rank * self.tile_size + self.tile_size/2)
         # z could be constant above board
-        z = self.corner_a1[2] + self.tile_size*1.6
+        z = self.corner_a1[2] + self.tile_size*1.4
         return round(x, 3), round(y, 3), round(z, 3)
     
     def xy_to_square(self, x: float, y: float) -> str:

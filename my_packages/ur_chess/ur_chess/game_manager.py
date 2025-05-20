@@ -126,7 +126,7 @@ class GameManager(Node):
                     else:
                         error_msg = f'Move {move_str} is not legal in this position.'
                         self.get_logger().error(error_msg)
-            status_msg = URChessMoveStatus(status=3,message="Illegal move.")
+            status_msg = URChessMoveStatus(status=3,message=error_msg)
             self.current_move_status = status_msg
             self.move_status_pub.publish(status_msg)
             return
