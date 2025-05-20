@@ -101,6 +101,38 @@ Open the ros2_ws folder, that will be the workspace folder, where you can build.
 >[!IMPORTANT] 
 > Only colcon build in this folder to circumvent any issues!
 
+## Gazebo sumilation world
+
+First step in order to have a functioning simulation is to have a Gazebo world.
+
+__The world contains:__
+
+- The UR5 robot arm
+- The table
+- The chess base
+- The chess board
+- The chess set
+
+### World generation
+
+To adjust wolrd based on the position of **A1** and tile size modify the `generate_chess_sdf.py` as needed at `~/my_packages/chess_gazebo_world/chess_gazebo_world/generate_chess_sdf.py`. 
+
+Moreover, several parameters are adjustable in this file like the **size of the table** and the **height of the base and the board**.
+
+Then run
+```bash
+ros2 run chess_gazebo_world generate_chess_sdf 
+```
+
+Rebuild the workspace (if needed) before **and/or** after world generation and launching.
+
+```bash
+colcon build
+source install/setup.bash
+```
+
+![Chess_gazebo_world](media/gazebo_world_chess.png)
+
 ## Running the UR driver (with the gripper attached)
 Once you are inside the container, you can start running drivers and writing you code.
 
@@ -124,21 +156,6 @@ Right now the only the arm movement works, in an empty space. On the provided GU
 
 The game manager waits for a new move on the topic `/ur_chess/current_move` in the [UCI](https://en.wikipedia.org/wiki/Universal_Chess_Interface) format, and when the robot finishes plaing the piece into the new pos it updates the current chessboard state in [FEN](https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation) format on `/ur_chess/chessboard_state`
 
-### World generation
-
-To adjust wolrd based on the position of A1 and tile size modify the `generate_chess_sdf.py` as needed at `~/my_packages/chess_gazebo_world/chess_gazebo_world/generate_chess_sdf.py`.
-
-Then run
-```bash
-ros2 run chess_gazebo_world generate_chess_sdf 
-```
-
-Rebuild the workspace (if needed) before **and/or** after world generation and launching.
-
-```bash
-colcon build
-source install/setup.bash
-```
 
 ### Real-life
 - TBD
