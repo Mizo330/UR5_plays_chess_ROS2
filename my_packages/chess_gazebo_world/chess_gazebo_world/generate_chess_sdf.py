@@ -4,25 +4,41 @@ import rclpy
 from rclpy.node import Node
 import os
 
+##Adjustable parameters
+
 square_size = 0.0375
-a1_x_0 = 1.0
-a1_y_0 = -1.0
-a1_x = a1_x_0 - (square_size / 2)
-a1_y = a1_y_0 - (square_size / 2)
-a1_z = 0.3
+a1_x_0 = 0
+a1_y_0 = -0.6
+a1_z = 0.5
 scale = 1.2
 coll_length = 0.05
+board_height = 0.01
 
-table_pose_x = a1_x_0-2*square_size
-table_pose_y = a1_y_0-2*square_size
-table_pose_z = a1_z-1-0.1
-chessboard_pose_x = a1_x_0-2*square_size
-chessboard_pose_y = a1_y_0-2*square_size
-chessboard_pose_z = a1_z-0.01
-base_pose_x = a1_x_0-2*square_size
-base_pose_y = a1_y_0-2*square_size
-base_pose_z = a1_z-0.1
-table_leg_length = a1_z-0.1
+base_height = 0.05
+
+table_dim_x = 0.8
+table_dim_y = 0.5
+table_dim_z = 0.03
+table_leg_radius = 0.02
+
+##Calculating...
+
+a1_x = a1_x_0 - (square_size / 2)
+a1_y = a1_y_0 - (square_size / 2)
+
+table_pose_x = a1_x_0-4*square_size
+table_pose_y = a1_y_0-4*square_size
+table_pose_z = a1_z-1-base_height
+chessboard_pose_x = a1_x_0-4*square_size
+chessboard_pose_y = a1_y_0-4*square_size
+chessboard_pose_z = a1_z
+base_pose_x = a1_x_0-4*square_size
+base_pose_y = a1_y_0-4*square_size
+base_pose_z = a1_z-base_height
+
+
+table_leg_length = a1_z-base_height-board_height
+
 
 pieces = [
     ("w_pawn_1", "model://pawn_white/meshes/pawn.dae", "a2", "0"),
@@ -62,8 +78,8 @@ pieces = [
 def square_to_xy(square):
     col = "abcdefgh".index(square[0])
     row = int(square[1]) - 1
-    x = a1_x - (col-2) * square_size
-    y = a1_y - (row-2) * square_size
+    x = a1_x - (col) * square_size
+    y = a1_y - (row) * square_size
     return x, y
 
 def generate_detailed_model(name, mesh_path, pose_x, pose_y , pose_z, yaw):
@@ -115,7 +131,7 @@ def generate_detailed_model(name, mesh_path, pose_x, pose_y , pose_z, yaw):
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 {coll_length/2} 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>{square_size/2}</radius>
@@ -272,7 +288,7 @@ def generate_environment(table_pose_x, table_pose_y, table_pose_z, chessboard_po
           <pose frame=''>0 0 1 0 -0 0</pose>
           <geometry>
             <box>
-              <size>1.5 0.8 0.03</size>
+              <size>{table_dim_x} {table_dim_y} {table_dim_z}</size>
             </box>
           </geometry>
           <surface>
@@ -296,7 +312,7 @@ def generate_environment(table_pose_x, table_pose_y, table_pose_z, chessboard_po
           <pose frame=''>0 0 1 0 -0 0</pose>
           <geometry>
             <box>
-              <size>1.5 0.8 0.03</size>
+              <size>{table_dim_x} {table_dim_y} {table_dim_z}</size>
             </box>
           </geometry>
           <material>
@@ -307,10 +323,10 @@ def generate_environment(table_pose_x, table_pose_y, table_pose_z, chessboard_po
           </material>
         </visual>
         <collision name='front_left_leg'>
-          <pose frame=''>0.68 0.38 {1-table_leg_length/2:.6f} 0 -0 0</pose>
+          <pose frame=''>{((table_dim_x/2)-table_leg_radius):.6f} {((table_dim_y/2)-table_leg_radius):.6f} {1-table_leg_length/2:.6f} 0 -0 0</pose>
           <geometry>
             <cylinder>
-              <radius>0.02</radius>
+              <radius>{table_leg_radius}</radius>
               <length>{table_leg_length}</length>
             </cylinder>
           </geometry>
@@ -329,10 +345,10 @@ def generate_environment(table_pose_x, table_pose_y, table_pose_z, chessboard_po
           </surface>
         </collision>
         <visual name='front_left_leg'>
-          <pose frame=''>0.68 0.38 {1-table_leg_length/2:.6f} 0 -0 0</pose>
+          <pose frame=''>{((table_dim_x/2)-table_leg_radius):.6f} {((table_dim_y/2)-table_leg_radius):.6f} {1-table_leg_length/2:.6f} 0 -0 0</pose>
           <geometry>
             <cylinder>
-              <radius>0.02</radius>
+              <radius>{table_leg_radius}</radius>
               <length>{table_leg_length}</length>
             </cylinder>
           </geometry>
@@ -344,10 +360,10 @@ def generate_environment(table_pose_x, table_pose_y, table_pose_z, chessboard_po
           </material>
         </visual>
         <collision name='front_right_leg'>
-          <pose frame=''>0.68 -0.38 {1-table_leg_length/2:.6f} 0 -0 0</pose>
+          <pose frame=''>{((table_dim_x/2)-table_leg_radius):.6f} {-((table_dim_y/2)-table_leg_radius):.6f} {1-table_leg_length/2:.6f} 0 -0 0</pose>
           <geometry>
             <cylinder>
-              <radius>0.02</radius>
+              <radius>{table_leg_radius}</radius>
               <length>{table_leg_length}</length>
             </cylinder>
           </geometry>
@@ -366,10 +382,10 @@ def generate_environment(table_pose_x, table_pose_y, table_pose_z, chessboard_po
           </surface>
         </collision>
         <visual name='front_right_leg'>
-          <pose frame=''>0.68 -0.38 {1-table_leg_length/2:.6f} 0 -0 0</pose>
+          <pose frame=''>{((table_dim_x/2)-table_leg_radius):.6f} {-((table_dim_y/2)-table_leg_radius):.6f} {1-table_leg_length/2:.6f} 0 -0 0</pose>
           <geometry>
             <cylinder>
-              <radius>0.02</radius>
+              <radius>{table_leg_radius}</radius>
               <length>{table_leg_length}</length>
             </cylinder>
           </geometry>
@@ -381,10 +397,10 @@ def generate_environment(table_pose_x, table_pose_y, table_pose_z, chessboard_po
           </material>
         </visual>
         <collision name='back_right_leg'>
-          <pose frame=''>-0.68 -0.38 {1-table_leg_length/2:.6f} 0 -0 0</pose>
+          <pose frame=''>{-((table_dim_x/2)-table_leg_radius):.6f} {-((table_dim_y/2)-table_leg_radius):.6f} {1-table_leg_length/2:.6f} 0 -0 0</pose>
           <geometry>
             <cylinder>
-              <radius>0.02</radius>
+              <radius>{table_leg_radius}</radius>
               <length>{table_leg_length}</length>
             </cylinder>
           </geometry>
@@ -403,10 +419,10 @@ def generate_environment(table_pose_x, table_pose_y, table_pose_z, chessboard_po
           </surface>
         </collision>
         <visual name='back_right_leg'>
-          <pose frame=''>-0.68 -0.38 {1-table_leg_length/2:.6f} 0 -0 0</pose>
+          <pose frame=''>{-((table_dim_x/2)-table_leg_radius):.6f} {-((table_dim_y/2)-table_leg_radius):.6f} {1-table_leg_length/2:.6f} 0 -0 0</pose>
           <geometry>
             <cylinder>
-              <radius>0.02</radius>
+              <radius>{table_leg_radius}</radius>
               <length>{table_leg_length}</length>
             </cylinder>
           </geometry>
@@ -418,10 +434,10 @@ def generate_environment(table_pose_x, table_pose_y, table_pose_z, chessboard_po
           </material>
         </visual>
         <collision name='back_left_leg'>
-          <pose frame=''>-0.68 0.38 {1-table_leg_length/2:.6f} 0 -0 0</pose>
+          <pose frame=''>{-((table_dim_x/2)-table_leg_radius):.6f} {((table_dim_y/2)-table_leg_radius):.6f} {1-table_leg_length/2:.6f} 0 -0 0</pose>
           <geometry>
             <cylinder>
-              <radius>0.02</radius>
+              <radius>{table_leg_radius}</radius>
               <length>{table_leg_length}</length>
             </cylinder>
           </geometry>
@@ -440,10 +456,10 @@ def generate_environment(table_pose_x, table_pose_y, table_pose_z, chessboard_po
           </surface>
         </collision>
         <visual name='back_left_leg'>
-          <pose frame=''>-0.68 0.38 {1-table_leg_length/2:.6f} 0 -0 0</pose>
+          <pose frame=''>{-((table_dim_x/2)-table_leg_radius):.6f} {((table_dim_y/2)-table_leg_radius):.6f} {1-table_leg_length/2:.6f} 0 -0 0</pose>
           <geometry>
             <cylinder>
-              <radius>0.02</radius>
+              <radius>{table_leg_radius}</radius>
               <length>{table_leg_length}</length>
             </cylinder>
           </geometry>
@@ -494,10 +510,10 @@ def generate_environment(table_pose_x, table_pose_y, table_pose_z, chessboard_po
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose frame=''>0 0 0.005 0 -0 0</pose>
+          <pose frame=''>0 0 {board_height/2:.6f} 0 -0 0</pose>
           <geometry>
             <box>
-              <size>0.368 0.368 0.01</size>
+              <size>0.368 0.368 {board_height}</size>
             </box>
           </geometry>
           <surface>
@@ -545,10 +561,10 @@ def generate_environment(table_pose_x, table_pose_y, table_pose_z, chessboard_po
         <kinematic>0</kinematic>
         <enable_wind>0</enable_wind>
         <visual name='visual'>
-          <pose frame=''>0 0 0.045 0 -0 0</pose>
+          <pose frame=''>0 0 {base_height/2:.6f} 0 -0 0</pose>
           <geometry>
             <box>
-              <size>0.68 0.45 0.09</size>
+              <size>0.68 0.45 {base_height}</size>
             </box>
           </geometry>
           <transparency>0</transparency>
@@ -557,10 +573,10 @@ def generate_environment(table_pose_x, table_pose_y, table_pose_z, chessboard_po
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose frame=''>0 0 0.045 0 -0 0</pose>
+          <pose frame=''>0 0 {base_height/2} 0 -0 0</pose>
           <geometry>
             <box>
-              <size>0.68 0.45 0.09</size>
+              <size>0.68 0.45 {base_height}</size>
             </box>
           </geometry>
           <surface>
