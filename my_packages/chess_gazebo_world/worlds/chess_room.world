@@ -94,7 +94,7 @@
           <pose frame=''>0 0 1 0 -0 0</pose>
           <geometry>
             <box>
-              <size>1.5 0.8 0.03</size>
+              <size>0.8 0.5 0.03</size>
             </box>
           </geometry>
           <surface>
@@ -118,7 +118,7 @@
           <pose frame=''>0 0 1 0 -0 0</pose>
           <geometry>
             <box>
-              <size>1.5 0.8 0.03</size>
+              <size>0.8 0.5 0.03</size>
             </box>
           </geometry>
           <material>
@@ -129,11 +129,11 @@
           </material>
         </visual>
         <collision name='front_left_leg'>
-          <pose frame=''>0.68 0.38 0.850000 0 -0 0</pose>
+          <pose frame=''>0.380000 0.230000 0.830000 0 -0 0</pose>
           <geometry>
             <cylinder>
               <radius>0.02</radius>
-              <length>0.30000000000000004</length>
+              <length>0.34</length>
             </cylinder>
           </geometry>
           <max_contacts>10</max_contacts>
@@ -151,11 +151,11 @@
           </surface>
         </collision>
         <visual name='front_left_leg'>
-          <pose frame=''>0.68 0.38 0.850000 0 -0 0</pose>
+          <pose frame=''>0.380000 0.230000 0.830000 0 -0 0</pose>
           <geometry>
             <cylinder>
               <radius>0.02</radius>
-              <length>0.30000000000000004</length>
+              <length>0.34</length>
             </cylinder>
           </geometry>
           <material>
@@ -166,11 +166,11 @@
           </material>
         </visual>
         <collision name='front_right_leg'>
-          <pose frame=''>0.68 -0.38 0.850000 0 -0 0</pose>
+          <pose frame=''>0.380000 -0.230000 0.830000 0 -0 0</pose>
           <geometry>
             <cylinder>
-              <radius>0.02</radius>
-              <length>0.30000000000000004</length>
+               ó<radius>0.02</radius>
+              <length>0.34</length>
             </cylinder>
           </geometry>
           <max_contacts>10</max_contacts>
@@ -188,11 +188,11 @@
           </surface>
         </collision>
         <visual name='front_right_leg'>
-          <pose frame=''>0.68 -0.38 0.850000 0 -0 0</pose>
+          <pose frame=''>0.380000 -0.230000 0.830000 0 -0 0</pose>
           <geometry>
             <cylinder>
               <radius>0.02</radius>
-              <length>0.30000000000000004</length>
+              <length>0.34</length>
             </cylinder>
           </geometry>
           <material>
@@ -203,11 +203,11 @@
           </material>
         </visual>
         <collision name='back_right_leg'>
-          <pose frame=''>-0.68 -0.38 0.850000 0 -0 0</pose>
+          <pose frame=''>-0.380000 -0.230000 0.830000 0 -0 0</pose>
           <geometry>
             <cylinder>
               <radius>0.02</radius>
-              <length>0.30000000000000004</length>
+              <length>0.34</length>
             </cylinder>
           </geometry>
           <max_contacts>10</max_contacts>
@@ -225,11 +225,11 @@
           </surface>
         </collision>
         <visual name='back_right_leg'>
-          <pose frame=''>-0.68 -0.38 0.850000 0 -0 0</pose>
+          <pose frame=''>-0.380000 -0.230000 0.830000 0 -0 0</pose>
           <geometry>
             <cylinder>
               <radius>0.02</radius>
-              <length>0.30000000000000004</length>
+              <length>0.34</length>
             </cylinder>
           </geometry>
           <material>
@@ -240,11 +240,11 @@
           </material>
         </visual>
         <collision name='back_left_leg'>
-          <pose frame=''>-0.68 0.38 0.850000 0 -0 0</pose>
+          <pose frame=''>-0.380000 0.230000 0.830000 0 -0 0</pose>
           <geometry>
             <cylinder>
               <radius>0.02</radius>
-              <length>0.30000000000000004</length>
+              <length>0.34</length>
             </cylinder>
           </geometry>
           <max_contacts>10</max_contacts>
@@ -262,11 +262,11 @@
           </surface>
         </collision>
         <visual name='back_left_leg'>
-          <pose frame=''>-0.68 0.38 0.850000 0 -0 0</pose>
+          <pose frame=''>-0.380000 0.230000 0.830000 0 -0 0</pose>
           <geometry>
             <cylinder>
               <radius>0.02</radius>
-              <length>0.30000000000000004</length>
+              <length>0.34</length>
             </cylinder>
           </geometry>
           <material>
@@ -280,7 +280,7 @@
         <enable_wind>0</enable_wind>
         <kinematic>0</kinematic>
       </link>
-      <pose frame=''>-0.075000 -0.600000 -0.700000 0 -0 0</pose>
+      <pose frame=''>-0.150000 -0.450000 -0.650000 0 -0 0</pose>
     </model>
     <model name='chessboard'>
       <static>1</static>
@@ -316,7 +316,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose frame=''>0 0 0.005 0 -0 0</pose>
+          <pose frame=''>0 0 0.005000 0 -0 0</pose>
           <geometry>
             <box>
               <size>0.368 0.368 0.01</size>
@@ -344,7 +344,7 @@
           </surface>
         </collision>
       </link>
-      <pose frame=''>-0.150000 -0.450000 0.390000 0 -0 1.57</pose>
+      <pose frame=''>-0.150000 -0.450000 0.400000 0 -0 1.57</pose>
     </model>
     <model name='chessboard_base'>
       <static>1</static>
@@ -367,10 +367,10 @@
         <kinematic>0</kinematic>
         <enable_wind>0</enable_wind>
         <visual name='visual'>
-          <pose frame=''>0 0 0.045 0 -0 0</pose>
+          <pose frame=''>0 0 0.025000 0 -0 0</pose>
           <geometry>
             <box>
-              <size>0.68 0.45 0.09</size>
+              <size>0.68 0.45 0.05</size>
             </box>
           </geometry>
           <transparency>0</transparency>
@@ -379,10 +379,10 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose frame=''>0 0 0.045 0 -0 0</pose>
+          <pose frame=''>0 0 0.025 0 -0 0</pose>
           <geometry>
             <box>
-              <size>0.68 0.45 0.09</size>
+              <size>0.68 0.45 0.05</size>
             </box>
           </geometry>
           <surface>
@@ -407,7 +407,7 @@
           </surface>
         </collision>
       </link>
-      <pose frame=''>-0.150000 -0.450000 0.300000 0 -0 0</pose>
+      <pose frame=''>-0.150000 -0.450000 0.350000 0 -0 0</pose>
     </model>
 
     <model name='w_pawn_1'>
@@ -452,7 +452,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 0.02625 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>0.009375</radius>
@@ -508,7 +508,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.018750 -0.356250 0.400000 0 -0 0</pose>
+      <pose>-0.018750 -0.356250 0.410000 0 -0 0</pose>
     </model>
 
     <model name='w_pawn_2'>
@@ -553,7 +553,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 0.02625 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>0.009375</radius>
@@ -609,7 +609,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.056250 -0.356250 0.400000 0 -0 0</pose>
+      <pose>-0.056250 -0.356250 0.410000 0 -0 0</pose>
     </model>
 
     <model name='w_pawn_3'>
@@ -654,7 +654,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 0.02625 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>0.009375</radius>
@@ -710,7 +710,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.093750 -0.356250 0.400000 0 -0 0</pose>
+      <pose>-0.093750 -0.356250 0.410000 0 -0 0</pose>
     </model>
 
     <model name='w_pawn_4'>
@@ -755,7 +755,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 0.02625 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>0.009375</radius>
@@ -811,7 +811,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.131250 -0.356250 0.400000 0 -0 0</pose>
+      <pose>-0.131250 -0.356250 0.410000 0 -0 0</pose>
     </model>
 
     <model name='w_pawn_5'>
@@ -856,7 +856,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 0.02625 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>0.009375</radius>
@@ -912,7 +912,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.168750 -0.356250 0.400000 0 -0 0</pose>
+      <pose>-0.168750 -0.356250 0.410000 0 -0 0</pose>
     </model>
 
     <model name='w_pawn_6'>
@@ -957,7 +957,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 0.02625 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>0.009375</radius>
@@ -1013,7 +1013,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.206250 -0.356250 0.400000 0 -0 0</pose>
+      <pose>-0.206250 -0.356250 0.410000 0 -0 0</pose>
     </model>
 
     <model name='w_pawn_7'>
@@ -1058,7 +1058,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 0.02625 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>0.009375</radius>
@@ -1114,7 +1114,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.243750 -0.356250 0.400000 0 -0 0</pose>
+      <pose>-0.243750 -0.356250 0.410000 0 -0 0</pose>
     </model>
 
     <model name='w_pawn_8'>
@@ -1159,7 +1159,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 0.02625 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>0.009375</radius>
@@ -1215,7 +1215,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.281250 -0.356250 0.400000 0 -0 0</pose>
+      <pose>-0.281250 -0.356250 0.410000 0 -0 0</pose>
     </model>
 
     <model name='w_rook_1'>
@@ -1260,7 +1260,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 0.02625 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>0.009375</radius>
@@ -1316,7 +1316,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.018750 -0.318750 0.400000 0 -0 0</pose>
+      <pose>-0.018750 -0.318750 0.410000 0 -0 0</pose>
     </model>
 
     <model name='w_knight_1'>
@@ -1361,7 +1361,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 0.02625 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>0.009375</radius>
@@ -1417,7 +1417,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.056250 -0.318750 0.400000 0 -0 0</pose>
+      <pose>-0.056250 -0.318750 0.410000 0 -0 0</pose>
     </model>
 
     <model name='w_bishop_1'>
@@ -1462,7 +1462,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 0.02625 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>0.009375</radius>
@@ -1518,7 +1518,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.093750 -0.318750 0.400000 0 -0 0</pose>
+      <pose>-0.093750 -0.318750 0.410000 0 -0 0</pose>
     </model>
 
     <model name='w_queen'>
@@ -1563,7 +1563,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 0.02625 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>0.009375</radius>
@@ -1619,7 +1619,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.131250 -0.318750 0.400000 0 -0 0</pose>
+      <pose>-0.131250 -0.318750 0.410000 0 -0 0</pose>
     </model>
 
     <model name='w_king'>
@@ -1664,7 +1664,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 0.02625 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>0.009375</radius>
@@ -1720,7 +1720,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.168750 -0.318750 0.400000 0 -0 0</pose>
+      <pose>-0.168750 -0.318750 0.410000 0 -0 0</pose>
     </model>
 
     <model name='w_bishop_2'>
@@ -1765,7 +1765,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 0.02625 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>0.009375</radius>
@@ -1821,7 +1821,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.206250 -0.318750 0.400000 0 -0 0</pose>
+      <pose>-0.206250 -0.318750 0.410000 0 -0 0</pose>
     </model>
 
     <model name='w_knight_2'>
@@ -1866,7 +1866,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 0.02625 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>0.009375</radius>
@@ -1922,7 +1922,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.243750 -0.318750 0.400000 0 -0 0</pose>
+      <pose>-0.243750 -0.318750 0.410000 0 -0 0</pose>
     </model>
 
     <model name='w_rook_2'>
@@ -1967,7 +1967,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 0.02625 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>0.009375</radius>
@@ -2023,7 +2023,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.281250 -0.318750 0.400000 0 -0 0</pose>
+      <pose>-0.281250 -0.318750 0.410000 0 -0 0</pose>
     </model>
 
     <model name='b_pawn_1'>
@@ -2068,7 +2068,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 0.02625 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>0.009375</radius>
@@ -2124,7 +2124,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.018750 -0.543750 0.400000 0 -0 0</pose>
+      <pose>-0.018750 -0.543750 0.410000 0 -0 0</pose>
     </model>
 
     <model name='b_pawn_2'>
@@ -2169,7 +2169,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 0.02625 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>0.009375</radius>
@@ -2225,7 +2225,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.056250 -0.543750 0.400000 0 -0 0</pose>
+      <pose>-0.056250 -0.543750 0.410000 0 -0 0</pose>
     </model>
 
     <model name='b_pawn_3'>
@@ -2270,7 +2270,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 0.02625 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>0.009375</radius>
@@ -2326,7 +2326,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.093750 -0.543750 0.400000 0 -0 0</pose>
+      <pose>-0.093750 -0.543750 0.410000 0 -0 0</pose>
     </model>
 
     <model name='b_pawn_4'>
@@ -2371,7 +2371,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 0.02625 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>0.009375</radius>
@@ -2427,7 +2427,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.131250 -0.543750 0.400000 0 -0 0</pose>
+      <pose>-0.131250 -0.543750 0.410000 0 -0 0</pose>
     </model>
 
     <model name='b_pawn_5'>
@@ -2472,7 +2472,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 0.02625 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>0.009375</radius>
@@ -2528,7 +2528,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.168750 -0.543750 0.400000 0 -0 0</pose>
+      <pose>-0.168750 -0.543750 0.410000 0 -0 0</pose>
     </model>
 
     <model name='b_pawn_6'>
@@ -2573,7 +2573,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 0.02625 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>0.009375</radius>
@@ -2629,7 +2629,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.206250 -0.543750 0.400000 0 -0 0</pose>
+      <pose>-0.206250 -0.543750 0.410000 0 -0 0</pose>
     </model>
 
     <model name='b_pawn_7'>
@@ -2674,7 +2674,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 0.02625 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>0.009375</radius>
@@ -2730,7 +2730,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.243750 -0.543750 0.400000 0 -0 0</pose>
+      <pose>-0.243750 -0.543750 0.410000 0 -0 0</pose>
     </model>
 
     <model name='b_pawn_8'>
@@ -2775,7 +2775,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 0.02625 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>0.009375</radius>
@@ -2831,7 +2831,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.281250 -0.543750 0.400000 0 -0 0</pose>
+      <pose>-0.281250 -0.543750 0.410000 0 -0 0</pose>
     </model>
 
     <model name='b_rook_1'>
@@ -2876,7 +2876,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 0.02625 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>0.009375</radius>
@@ -2932,7 +2932,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.018750 -0.581250 0.400000 0 -0 0</pose>
+      <pose>-0.018750 -0.581250 0.410000 0 -0 0</pose>
     </model>
 
     <model name='b_knight_1'>
@@ -2977,7 +2977,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 0.02625 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>0.009375</radius>
@@ -3033,7 +3033,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.056250 -0.581250 0.400000 0 -0 3.14</pose>
+      <pose>-0.056250 -0.581250 0.410000 0 -0 3.14</pose>
     </model>
 
     <model name='b_bishop_1'>
@@ -3078,7 +3078,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 0.02625 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>0.009375</radius>
@@ -3134,7 +3134,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.093750 -0.581250 0.400000 0 -0 0</pose>
+      <pose>-0.093750 -0.581250 0.410000 0 -0 0</pose>
     </model>
 
     <model name='b_queen'>
@@ -3179,7 +3179,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 0.02625 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>0.009375</radius>
@@ -3235,7 +3235,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.131250 -0.581250 0.400000 0 -0 0</pose>
+      <pose>-0.131250 -0.581250 0.410000 0 -0 0</pose>
     </model>
 
     <model name='b_king'>
@@ -3280,7 +3280,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 0.02625 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>0.009375</radius>
@@ -3336,7 +3336,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.168750 -0.581250 0.400000 0 -0 0</pose>
+      <pose>-0.168750 -0.581250 0.410000 0 -0 0</pose>
     </model>
 
     <model name='b_bishop_2'>
@@ -3381,7 +3381,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 0.02625 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>0.009375</radius>
@@ -3437,7 +3437,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.206250 -0.581250 0.400000 0 -0 0</pose>
+      <pose>-0.206250 -0.581250 0.410000 0 -0 0</pose>
     </model>
 
     <model name='b_knight_2'>
@@ -3482,7 +3482,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 0.02625 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>0.009375</radius>
@@ -3538,7 +3538,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.243750 -0.581250 0.400000 0 -0 3.14</pose>
+      <pose>-0.243750 -0.581250 0.410000 0 -0 3.14</pose>
     </model>
 
     <model name='b_rook_2'>
@@ -3583,7 +3583,7 @@
         <collision name='collision'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0 0 0.005 0 -0 0</pose>
+          <pose>0 0 0.02625 0 -0 0</pose>
           <geometry>
             <cylinder>
                 <radius>0.009375</radius>
@@ -3639,7 +3639,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.281250 -0.581250 0.400000 0 -0 0</pose>
+      <pose>-0.281250 -0.581250 0.410000 0 -0 0</pose>
     </model>
 
                               <!-- A gazebo links attacher -->
