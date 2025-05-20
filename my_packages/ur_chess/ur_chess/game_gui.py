@@ -31,6 +31,7 @@ class ROSWorker(QThread):
         rclpy.init()
         self.node = Node('ros_gui_worker')
         self.node.declare_parameter("mode", "FishVFish")
+        self.node.declare_parameter("remote", False)
         self.pub_estop = None
         self.pub_game_control = None
         self._running = True
@@ -260,8 +261,9 @@ class MainWindow(QMainWindow):
         stop_lbl = QLabel('Stop'); stop_lbl.setAlignment(Qt.AlignCenter)
         stop_layout = QVBoxLayout(); stop_layout.addWidget(self.stop_button); stop_layout.addWidget(stop_lbl)
         ctrl.addLayout(stop_layout)
-
-        layout.addLayout(ctrl)
+        remote = self.ros_worker.node.get_parameter("remote").value
+        if not remote:
+            layout.addLayout(ctrl)
         central.setLayout(layout)
         self.setCentralWidget(central)
 
