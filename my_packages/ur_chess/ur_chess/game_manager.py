@@ -37,19 +37,22 @@ class GameManager(Node):
         self.fen_pub = self.create_publisher(String, '/ur_chess/chessboard_state', 10)
         self.move_status_pub = self.create_publisher(URChessMoveStatus, '/ur_chess/move_status',10)
         self.stop_pub = self.create_publisher(String, '/trajectory_execution_event', 10)
-
+        self.current_move_status = URChessMoveStatus(status=-1)
+        self.current_move_status.moveinfo.turn = URChessMoveInfo.WHITE
         # Buffer for current request
         self.pending_move = None
 
         self.get_logger().info(TextColor.color_text('GameManager initialized', TextColor.OKCYAN))
-
+    
     def control_callback(self, msg):
         command = msg.data.lower()
         if command == 'play':
             if self.state in ('paused', 'stopped'):
                 self.get_logger().info(TextColor.color_text('Starting game', TextColor.OKGREEN))
                 req = URChessMoveNamedPos.Request()
-                req.named_posisiton = "chess_home"       
+                req.named_posisiton = "chess_home"  
+                self.current_move_status = URChessMoveStatus(status=URChessMoveStatus.STATUS_IN_PROGRESS)     
+                self.move_status_pub.publish(self.current_move_status)
                 future = self.controller_named_pos_client.call_async(req)
                 future.add_done_callback(self.move_named_pos_callback)
         elif command == 'pause':
@@ -77,9 +80,11 @@ class GameManager(Node):
             self.state = 'running'
             fen = self.board.fen()
             self.fen_pub.publish(String(data=fen))
+            self.current_move_status = URChessMoveStatus(status=URChessMoveStatus.STATUS_SUCCESS)
+            self.move_status_pub.publish(self.current_move_status)
         else:
             self.get_logger().fatal("Failed to move to position! Closing manager.")
-            raise KeyboardInterrupt
+            raise SystemExit("Exiting cleanly")
             
     def move_callback(self, msg: String):
         
@@ -97,8 +102,9 @@ class GameManager(Node):
             move = chess.Move.from_uci(move_str)
         except ValueError:
             self.get_logger().error(f'Invalid UCI format: {move_str}')
-            msg = URChessMoveStatus(status=3,message="Invalid UCI format")
-            self.move_status_pub.publish(msg)
+            status_msg = URChessMoveStatus(status=3,message="Invalid UCI format")
+            self.current_move_status = status_msg
+            self.move_status_pub.publish(status_msg)
             return
         # Check if it's a legal move
         if move not in board.legal_moves:
@@ -120,8 +126,9 @@ class GameManager(Node):
                     else:
                         error_msg = f'Move {move_str} is not legal in this position.'
                         self.get_logger().error(error_msg)
-            msg = URChessMoveStatus(status=3,message="Illegal move.")
-            self.move_status_pub.publish(msg)
+            status_msg = URChessMoveStatus(status=3,message="Illegal move.")
+            self.current_move_status = status_msg
+            self.move_status_pub.publish(status_msg)
             return
         
         moveinfo = URChessMoveInfo()
@@ -160,6 +167,7 @@ class GameManager(Node):
         status_msg.moveinfo = moveinfo
         self.get_logger().info(f'Sending move request: {move_str}')
         future = self.controller_client.call_async(req)
+        self.current_move_status = status_msg
         self.move_status_pub.publish(status_msg)
         future.add_done_callback(self.srv_response_callback)
         self.pending_move = moveinfo
@@ -170,6 +178,7 @@ class GameManager(Node):
             status_msg = URChessMoveStatus()
             status_msg.status = URChessMoveStatus.STATUS_FAILED
             status_msg.moveinfo = self.pending_move
+            self.current_move_status = status_msg
             self.move_status_pub.publish(status_msg)
             return
         result = future.result()
@@ -181,6 +190,7 @@ class GameManager(Node):
             status_msg.status = URChessMoveStatus.STATUS_SUCCESS
             status_msg.moveinfo = self.pending_move
             status_msg.moveinfo.is_checkmate = self.board.is_checkmate()
+            self.current_move_status = status_msg
             self.move_status_pub.publish(status_msg)
             self.fen_pub.publish(String(data=fen))
 
@@ -198,6 +208,10 @@ class GameManager(Node):
     def handle_checkmate(self):
         #TODO expand this
         self.get_logger().info(f"{TextColor.OKGREEN}{"Checkmate!"}{TextColor.ENDC}",)
+        status_msg = URChessMoveStatus()
+        status_msg.status = URChessMoveStatus.STATUS_GAME_TERMINATED
+        self.current_move_status = status_msg
+        self.move_status_pub.publish(self.current_move_status)
         
 def main(args=None):
     rclpy.init(args=args)

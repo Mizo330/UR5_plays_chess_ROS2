@@ -28,14 +28,15 @@ class ROSWorker(QThread):
 
     def __init__(self):
         super().__init__()
-        self.node = None
+        rclpy.init()
+        self.node = Node('ros_gui_worker')
+        self.node.declare_parameter("mode", "FishVFish")
         self.pub_estop = None
         self.pub_game_control = None
         self._running = True
 
     def run(self):
-        rclpy.init()
-        self.node = Node('ros_gui_worker')
+
         self.pub_estop = self.node.create_publisher(String, '/trajectory_execution_event', 10)
         self.pub_game_control = self.node.create_publisher(String, '/ur_chess/game_control', 10)
         self.current_move_pub = self.node.create_publisher(String, '/ur_chess/current_move', 10)
@@ -99,7 +100,10 @@ class ChessboardWidget(QWidget):
         self.setMinimumSize(self.square_size * 8, self.square_size * 8)
         self.selected_squares = []  # to hold square names like "e2", "e4"
         self.block_move = False
-
+        self.mode = None
+        self.singleplayercolor = None
+        self.turn = None
+        
     def update_board(self, fen: str):
         self.fen = fen
         self.current_move = ''
@@ -142,8 +146,11 @@ class ChessboardWidget(QWidget):
             painter.drawRect(ef * self.square_size, er * self.square_size, self.square_size, self.square_size)
 
     def mousePressEvent(self, event):
-        if self.block_move: 
+        if self.block_move or self.mode == "FishVFish": 
             return
+        if self.singleplayercolor is not None:
+            if self.singleplayercolor != self.turn:
+                return
         file = event.x() // self.square_size
         rank = event.y() // self.square_size
         square = self._index_to_square(file, rank)
@@ -186,10 +193,24 @@ class MainWindow(QMainWindow):
         central = QWidget()
         layout = QVBoxLayout()
 
+        # Chessboard
+        self.chessboard = ChessboardWidget()
+
+        #Get mode 
+        mode = self.ros_worker.node.get_parameter("mode").value # choices=['FishVFish',"PVP","P(b)VFish","P(w)VFish"])
+        self.chessboard.mode = mode
+        # Determine player color for single-player modes
+        if mode == "P(w)VFish":
+            self.chessboard.singleplayercolor = True  # white
+        elif mode == "P(b)VFish":
+            self.chessboard.singleplayercolor = False  # black
+        else:
+            self.chessboard.singleplayercolor = None  # not singleplayer
+                
         # Status Panel
         status = QGroupBox('Status')
         form = QFormLayout()
-        self.mode_label = QLabel('PVP')
+        self.mode_label = QLabel(mode)
         self.joint_label = QLabel('---')
         self.gripper_label = QLabel('Unknown')
         self.movestatus_label = QLabel("Unkown")
@@ -207,8 +228,7 @@ class MainWindow(QMainWindow):
         self.estop_button.setStyleSheet('background:red;color:white;font-size:18pt;')
         layout.addWidget(self.estop_button)
 
-        # Chessboard
-        self.chessboard = ChessboardWidget()
+        #Add the chessboard widget
         layout.addWidget(self.chessboard)
 
         # Controls
@@ -264,18 +284,41 @@ class MainWindow(QMainWindow):
             self.movestatus_label.setText("SUCCESS")
             self.chessboard.highlight_move("")
             if msg.moveinfo:
-                if msg.moveinfo.is_checkmate:
-                    QMessageBox.information(
-                        self,
-                        "Checkmate",
-                        f"{'White' if msg.moveinfo.turn else 'Black'} has delivered a checkmate! Good game!"
-                    )
-                elif msg.moveinfo.is_check:
-                    QMessageBox.information(
-                        self,
-                        "Check",
-                        f"{'White' if msg.moveinfo.turn else 'Black'} has delivered a check!"
-                    )
+                if self.chessboard.mode != "FishVFish":
+                    self.chessboard.turn = not msg.moveinfo.turn
+                    if self.chessboard.singleplayercolor is not None:
+                        if self.chessboard.singleplayercolor!=msg.moveinfo.turn: # Check is last move was #!Not us
+                            QMessageBox.information(
+                                self,
+                                "Notifiction.",
+                                "Your Turn!"
+                            )
+                        if msg.moveinfo.is_checkmate and self.chessboard.singleplayercolor!=msg.moveinfo.turn:
+                            QMessageBox.information(
+                                self,
+                                "Checkmate",
+                                f"{'White' if msg.moveinfo.turn else 'Black'} has delivered a checkmate! Good game!"
+                            )
+                        elif msg.moveinfo.is_check and self.chessboard.singleplayercolor!=msg.moveinfo.turn:
+                            QMessageBox.information(
+                                self,
+                                "Check",
+                                f"{'White' if msg.moveinfo.turn else 'Black'} has delivered a check!"
+                            )
+                    else:
+                        if msg.moveinfo.is_checkmate:
+                            QMessageBox.information(
+                                self,
+                                "Checkmate",
+                                f"{'White' if msg.moveinfo.turn else 'Black'} has delivered a checkmate! Good game!"
+                            )
+                        elif msg.moveinfo.is_check:
+                            QMessageBox.information(
+                                self,
+                                "Check",
+                                f"{'White' if msg.moveinfo.turn else 'Black'} has delivered a check!"
+                            )
+            self.chessboard.block_move = False
         elif msg.status == URChessMoveStatus.STATUS_IN_PROGRESS:
             self.movestatus_label.setText("IN PROGRESS")
             self.chessboard.block_move = True

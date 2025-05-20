@@ -1,28 +1,34 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction
-from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
 from launch_ros.actions import Node
 
-
 THIS_PACKAGE = "ur_chess"
 
-
 def generate_launch_description():
-    declared_arguments = []
-    # UR specific arguments
-    declared_arguments.append(
+    # Declare launch argument
+    mode_arg = DeclareLaunchArgument(
+        'mode',
+        default_value='FishVFish',
+        description='Select what mode you want to play in.',
+        choices=['FishVFish', 'PVP', 'P(b)VFish', 'P(w)VFish']
+    )
+
+    # Get launch configuration substitution
+    mode = LaunchConfiguration('mode')
+
+    # Define nodes
+    nodes = [
         Node(
+            namespace=THIS_PACKAGE,
             package=THIS_PACKAGE,
             executable='game_manager',
             name='game_manager',
             output='screen',
-        )
-    )
-    
-    declared_arguments.append(
+        ),
         Node(
+            namespace=THIS_PACKAGE,
             package=THIS_PACKAGE,
             executable='moveit_controller',
             name='moveit_controller',
@@ -41,25 +47,24 @@ def generate_launch_description():
                     [FindPackageShare(THIS_PACKAGE), 'config', 'board_layout.yaml']
                 )
             }],
-        )
-    )
-    
-    declared_arguments.append(
+        ),
         Node(
+            namespace=THIS_PACKAGE,
             package=THIS_PACKAGE,
             executable='gui',
             name='gui',
             output='screen',
-        )
-    )
-    
-    declared_arguments.append(
+            parameters=[{'mode': mode}],
+        ),
         Node(
+            namespace=THIS_PACKAGE,
             package=THIS_PACKAGE,
             executable='stockfish_node',
             name='stockfish_node',
             output='screen',
+            parameters=[{'mode': mode}],
         )
-    )
+    ]
 
-    return LaunchDescription(declared_arguments)
+    # Return launch description with the declared argument and all nodes
+    return LaunchDescription([mode_arg] + nodes)
