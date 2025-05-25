@@ -1,4 +1,7 @@
 # UR5E robot plays chess - ROS2 implementation
+<p align="center">
+  <img src="/media/demo.gif" width="800" />
+</p>
 
 ### TODOS:
 - [x] Make Stockfish chess node
@@ -13,12 +16,14 @@
   - [x] Fully sync with gazebo params (same .yaml)
 - [ ] Refine code
   - [ ] Fix game controls (~~play~~, pause, stop)
-  - [ ] Better error handling, (make a reset button)
+  - [ ] Better error handling (~90%done)
+  - [x] Make a resend promt
   - [ ] Config for constraints, maybe dynamic based on borad loc.
   - [x] Handle en passant, checkmate
 - [x] Make it playable with gui?
   - [x] PvP, PvAI, AIvAI
-- [ ] Update README
+- [x] Update README
+- [ ] Make doc with page
 - [ ] **Test driver on real life robot**
   - [ ] Make grabber control interface for ROS2
 
@@ -30,8 +35,9 @@
 
 ## Pre-requisites
 - Ubuntu 24 (native or WSL)
-- Nvidia GPU with driver
-- VSCode
+- Nvidia GPU with driver ([how to](https://documentation.ubuntu.com/server/how-to/graphics/install-nvidia-drivers/index.html))
+- Docker
+- (VSCode, optional)
 
 ## Pre-Installation 
 
@@ -57,7 +63,6 @@ You should log out and log in again to update the user groups!
 Use **VSCode** for easier acces. Install these extensions:
 - Devcontainer
 - Docker
-- Remote - SSh (*may not be needed*)
 
 ### NVIDIA Container
 
@@ -67,10 +72,11 @@ Follow the installation steps here:
 https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker
 
 
-## Running the container
+## Installation - Docker
 
-Once you have installed Docker, simply run these following scripts:
+We have provided a Dockerfile to test and run the simulation. 
 
+Build the container. This will take some time.
 ```bash
 cd /docker
 ./build_docker.sh
@@ -107,79 +113,28 @@ And include the following:
 Once the container has been created, go to the **Docker** tap in vscode -> right click the running container -> attach VSCode.
 
 Open the ros2_ws folder, that will be the workspace folder, where you can build.
->[!IMPORTANT] 
-> Only colcon build in this folder to circumvent any issues!
 
-## Gazebo sumilation world
+### Running the simulation:
 
-First step in order to have a functioning simulation is to have a Gazebo world.
-
-__The world contains:__
-
-- The UR5 robot arm
-- The table
-- The chess base
-- The chess board
-- The chess set
-
-### World generation
-
-To adjust wolrd based on the position of **A1** and tile size modify the `generate_chess_sdf.py` as needed at `~/my_packages/chess_gazebo_world/chess_gazebo_world/generate_chess_sdf.py`. 
-
-Moreover, several parameters are adjustable in this file like the **size of the table** and the **height of the base and the board**.
-
-Then run
-```bash
-ros2 run chess_gazebo_world generate_chess_sdf 
+```
+ros2 launch ur_chess ur_chess.launch.py mode:=FishVFish
 ```
 
-Rebuild the workspace (if needed) before **and/or** after world generation and launching.
+This will launch the full simulation, where the robot is using stockfish to place the pieces. To start the game press start on the UI.
 
-```bash
-colcon build
-source install/setup.bash
-```
+#### Game modes
 
-![Chess_gazebo_world](media/gazebo_world_chess.png)
+- `'FishVFish'` - stockfish will play againts itself
+-  `'PVP'` - player versus player, you can place the pieces on the GUI
+- `'P(b)VFish'` - player versus stockfish, player on black side
+- `'P(w)VFish'` - player versus stockfish, player on white side
 
-## Running the UR driver (with the gripper attached)
-Once you are inside the container, you can start running drivers and writing you code.
+#### Parameters
+You can tweak some parameters in the `/ur_chess/config/ur_chess_config.yaml` file, like the stockfish settings and chessboard location.
 
-The full documentation about the UR driver and its packages can be found [here](https://docs.universal-robots.com/Universal_Robots_ROS2_Documentation/index.html).
-
-### Simulation
-
-To run the sim with moveit and gazebo: 
-```bash
-ros2 launch ur_simulation_gz ur_sim_moveit.launch.py ur_type:=ur5e
-```
-
-Next launch the chess simulation:
-```bash
-ros2 launch ur_chess ur_chess.launch.py
-```
-
-Right now the only the arm movement works, in an empty space. On the provided GUI however, you can observe the current hypotethical chess game.
-
-![promo](media/screenshot.png)
-
-The game manager waits for a new move on the topic `/ur_chess/current_move` in the [UCI](https://en.wikipedia.org/wiki/Universal_Chess_Interface) format, and when the robot finishes plaing the piece into the new pos it updates the current chessboard state in [FEN](https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation) format on `/ur_chess/chessboard_state`
-
-### World generation
-
-To adjust wolrd based on the position of A1 and tile size modify the `generate_chess_sdf.py` as needed at `~/my_packages/chess_gazebo_world/chess_gazebo_world/generate_chess_sdf.py`.
-
-Then run
-```bash
-ros2 run chess_gazebo_world generate_chess_sdf 
-```
-
-Rebuild the workspace (if needed) before **and/or** after world generation and launching.
-
-```bash
-colcon build
-source install/setup.bash
-```
+>[!NOTE]
+>The board parameters arent foolproof yet, so you can easily make pieces unreachable for the robot either by setting it too far, or placing the chessboard inside the robot.
+>To further edit how the world looks, you can edit the `/chess_gazebo_world/chess_gazebo_world/generate_chess_sdf.py`, but not everything has been synchronized with moveit collision creation, only the params in the yaml.
 
 ### Real-life
 - TBD
