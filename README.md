@@ -163,11 +163,11 @@ Right now the only the arm movement works, in an empty space. On the provided GU
 
 ![promo](media/screenshot.png)
 
-The game manager waits for a new move on the topic `/ur_chess/current_move` in the [UCI](https://en.wikipedia.org/wiki/Universal_Chess_Interface) format, and when the robot finishes plaing the piece into the new pos it updates the current chessboard state in [FEN](https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation) format on `/ur_chess/chessboard_state`
+The game manager waits for a new move on the topic `/ur_chess/current_move` in the [UCI](https://en.wikipedia.org/wiki/Universal_Chess_Interface) format, and when the robot finishes playing the piece into the new pos it updates the current chessboard state in [FEN](https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation) format on `/ur_chess/chessboard_state`
 
 ### World generation
 
-To adjust wolrd based on the position of A1 and tile size modify the `generate_chess_sdf.py` as needed at `~/my_packages/chess_gazebo_world/chess_gazebo_world/generate_chess_sdf.py`.
+To adjust world based on the position of A1 and tile size modify the `generate_chess_sdf.py` as needed at `~/my_packages/chess_gazebo_world/chess_gazebo_world/generate_chess_sdf.py`.
 
 Then run
 ```bash
