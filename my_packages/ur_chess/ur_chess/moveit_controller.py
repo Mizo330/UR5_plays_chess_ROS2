@@ -57,16 +57,17 @@ class MoveItCommander(Node):
         self.declare_parameter("moveit_cpp_cfg", get_package_share_directory("ur_chess") + "/config/moveit_cpp.yaml")
         self.declare_parameter("moveit_cpp_srdf", get_package_share_directory("ur_chess") + "/config/moveit_cpp.srdf")
         self.declare_parameter("moveit_controller_cfg",get_package_share_directory("ur_moveit_config") + "/config/moveit_controllers.yaml")
-        self.declare_parameter("board_layout", get_package_share_directory("ur_chess") + "/config/board_layout.yaml")
+        self.declare_parameter("max_plan_tries", 10)
+        self.declare_parameter("a1",[0.1, -0.3, 0.4])
+        self.declare_parameter("tile_size",0.0375)
+        self.declare_parameter("orientation",[-1, -1])
 
-        self.max_plan_tries = 10 #TODO make this a param
-        # Load the board layout from the YAML file
-        board_layout_path = self.get_parameter("board_layout").value
-        with open(board_layout_path, 'r') as f:
-            board_layout = yaml.safe_load(f)
-        self.corner_a1 = board_layout['a1']
-        self.tile_size = board_layout['tile_size']
-        self.board_orientation = board_layout['orientation']
+        self.max_plan_tries = self.get_parameter("max_plan_tries").value
+
+        self.corner_a1 = self.get_parameter("a1").value
+        self.tile_size = self.get_parameter("tile_size").value
+        self.board_orientation = self.get_parameter("orientation").value
+        
         self.chesspiece_clearance = 0.1 # Clearance above the chess piece where the arm should move across.
         
         self.get_logger().info("Setting up moveit config.")
@@ -144,7 +145,6 @@ class MoveItCommander(Node):
                 self.chess_pieces.append(chess_piece)
             
             
-    #TODO fix        
     def move_named_pos_cb(self, request : URChessMoveNamedPos.Request,response:URChessMoveNamedPos.Response):
         named_pos = request.named_posisiton
         self.ur_commander_arm.set_start_state_to_current_state()
@@ -154,7 +154,7 @@ class MoveItCommander(Node):
             response.message = f"No predefined joint state found for target name '{named_pos}'"
             return response
         
-        result = self.plan_and_execute(self.ur_commander_arm, sleep_time=2)
+        result = self.plan_and_execute(self.ur_commander_arm, sleep_time=1)
         if result:
             response.success= True
         else:
@@ -164,7 +164,7 @@ class MoveItCommander(Node):
     
     def plan_and_execute(self, planning_component, single_plan_parameters=None, multi_plan_parameters=None, sleep_time=0.0):
         """Plan and execute trajectory (blocking)."""
-        for _ in range(10):
+        for _ in range(self.max_plan_tries):
             self.get_logger().info("Planning trajectory")
             if multi_plan_parameters is not None:
                 plan_result = planning_component.plan(multi_plan_parameters=multi_plan_parameters)
@@ -182,7 +182,7 @@ class MoveItCommander(Node):
             else:
                 self.get_logger().warn("Planning failed")
                 
-        self.get_logger().error("Failed to plan under 10 tries")
+        self.get_logger().error(f"Failed to plan under {self.max_plan_tries} tries")
         return False
     
     def plan_trajectory(self, planning_component, single_plan_parameters=None, multi_plan_parameters=None) -> Optional[MotionPlanResponse]:
@@ -228,7 +228,7 @@ class MoveItCommander(Node):
             end_pos = self.square_to_xyz(moveinfo.move_uci[2:4])
             piece = self.find_chess_piece(moveinfo.move_uci[:2])
 
-            self.pick_and_place(start_pos,end_pos,piece)
+            self.pick_and_place(start_pos,end_pos,piece,moveinfo.moved_piece)
 
             response.success = True
             response.message = 'Succesful movement.'
@@ -240,14 +240,17 @@ class MoveItCommander(Node):
             response.success = False
             return response     
 
-    def pick_and_place(self,start_pos,end_pos,piece:ChessPiece):
+    def pick_and_place(self,start_pos,end_pos,piece:ChessPiece, piece_type=None):
         start_x, start_y, start_z = start_pos
         end_x, end_y, end_z = end_pos
+        if piece_type == 'p':
+            end_z -= self.tile_size*0.3
+            start_z -= self.tile_size*0.3
         trajectories = self.plan_grab_piece(start_x,start_y,start_z)
         for traj in trajectories:
             self.execution_manager.push(traj, controllers=[])
         self.execution_manager.execute_and_wait(auto_clear=True)
-        
+
         piece.attach_to_robot(self.planning_scene_monitor)
 
         trajectories = self.plan_move_piece(start_x, start_y, start_z, end_x, end_y, end_z)
@@ -268,7 +271,7 @@ class MoveItCommander(Node):
         if piece is not None:
             start_pos = self.square_to_xyz(moveinfo.move_uci[2:4])
             graveyard_pos, graveyard_sqaure = self.get_graveyard_pos(moveinfo.turn)
-            self.pick_and_place(start_pos,graveyard_pos,piece)
+            self.pick_and_place(start_pos,graveyard_pos,piece,moveinfo.moved_piece)
         else:
             self.get_logger().warn(f'No piece found at {moveinfo.move_uci[2:4]} to capture')
             
@@ -286,7 +289,7 @@ class MoveItCommander(Node):
         rook = self.find_chess_piece(move_uci[:2])
         start_pos = self.square_to_xyz(move_uci[:2])
         end_pos = self.square_to_xyz(move_uci[2:4])
-        self.pick_and_place(start_pos,end_pos,rook)
+        self.pick_and_place(start_pos,end_pos,rook,moveinfo.moved_piece)
         
     def handle_en_passant(self,moveinfo: URChessMoveInfo):
         capturer_end = moveinfo.move_uci[2:4]
@@ -295,7 +298,7 @@ class MoveItCommander(Node):
         if piece is not None:
             start_pos = self.square_to_xyz(captured_square)
             graveyard_pos, graveyard_sqaure = self.get_graveyard_pos(moveinfo.turn)
-            self.pick_and_place(start_pos,graveyard_pos,piece)
+            self.pick_and_place(start_pos,graveyard_pos,piece,moveinfo.moved_piece)
         else:
             self.get_logger().warn(f'No piece found at {moveinfo.move_uci[2:4]} to capture')
         
@@ -321,8 +324,8 @@ class MoveItCommander(Node):
                 file = '`'
             else:
                 file = '_'
+            rank = 8 - ((self.black_captures) % 8) 
             self.black_captures += 1
-            rank = 8 - ((self.black_captures) % 8)
             return self.square_to_xyz(file + str(rank)) , f'{file}{rank}'
         else:
             raise ValueError("Invalid piece color. Use True for white or False for black.")
@@ -335,7 +338,7 @@ class MoveItCommander(Node):
         x = self.corner_a1[0] + self.board_orientation[0]*(file * self.tile_size + self.tile_size/2)
         y = self.corner_a1[1] + self.board_orientation[1]*(rank * self.tile_size + self.tile_size/2)
         # z could be constant above board
-        z = self.corner_a1[2] + self.tile_size*1.4
+        z = self.corner_a1[2] + self.tile_size*1.6
         return round(x, 3), round(y, 3), round(z, 3)
     
     def xy_to_square(self, x: float, y: float) -> str:
@@ -371,7 +374,7 @@ class MoveItCommander(Node):
     def plan_move_home(self,end_x,end_y,end_z):
         waypoints = []
         waypoints.append(Waypoint(position=make_point(end_x,end_y,end_z+self.chesspiece_clearance)))
-        waypoints.append(Waypoint(named_position="chess_home"))
+        #waypoints.append(Waypoint(named_position="chess_home"))
         trajectories = self.plan_move_trajectory(waypoints)
 
         return trajectories
@@ -446,21 +449,6 @@ class MoveItCommander(Node):
         joint_constraints = Constraints()
         joint_constraints.name = "constaints"
         
-        # Define a joint constraint for 'joint_1'
-        # jc1 = JointConstraint()
-        # jc1.joint_name = "elbow_joint"
-        # jc1.position = math.radians(-50)  # Desired joint position in radians
-        # jc1.tolerance_above = math.radians(50)   # Upper tolerance in radians
-        # jc1.tolerance_below = math.radians(80)  # Lower tolerance in radians
-        # jc1.weight = 1.0  # Importance of this constraint
-
-        # jc2 = JointConstraint()
-        # jc2.joint_name = "shoulder_lift_joint"
-        # jc2.position = math.radians(-75)
-        # jc2.tolerance_above = math.radians(75)
-        # jc2.tolerance_below = math.radians(75)
-        # jc2.weight = 1.0
-        
         jc = JointConstraint()
         jc.joint_name = "wrist_1_joint"
         jc.position = math.radians(-110)
@@ -499,7 +487,6 @@ def main(args=None):
     rclpy.init(args=args)
     commander = MoveItCommander()
     
-    # Use a single threaded executor to handle the callbacks
     executor = rclpy.executors.SingleThreadedExecutor()
     executor.add_node(commander)
     executor.spin()

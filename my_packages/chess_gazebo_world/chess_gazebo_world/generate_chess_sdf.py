@@ -9,17 +9,17 @@ import numpy as np
 
 rclpy.init()
 node = Node("chess_world_gen")
-node.declare_parameter("board_layout", get_package_share_directory("ur_chess") + "/config/board_layout.yaml")
-board_layout_path = node.get_parameter("board_layout").value
 
-with open(board_layout_path, 'r') as f:
-    board_layout = yaml.safe_load(f)
-a1_x_0, a1_y_0, a1_z = board_layout['a1']
-square_size = board_layout['tile_size']
-o_x, o_y  = board_layout['orientation']
+node.declare_parameter("a1",[0.1, -0.3, 0.4])
+node.declare_parameter("tile_size",0.0375)
+node.declare_parameter("orientation",[-1, -1])
+
+
+a1_x_0, a1_y_0, a1_z = node.get_parameter("a1").value
+square_size = node.get_parameter("tile_size").value
+o_x, o_y = node.get_parameter("orientation").value
 
 #TODO Assertions
-node.get_logger().debug("Read config")
 
 a1_x = a1_x_0 + o_x*(square_size / 2)
 a1_y = a1_y_0 + o_y*(square_size / 2)

@@ -135,7 +135,7 @@ class GameManager(Node):
         moveinfo.move_uci = move_str
         moveinfo.move_number = board.fullmove_number
         moveinfo.ply = board.ply()
-        moveinfo.moved_piece = board.piece_at(move.from_square) #TODO handle this (for different piece size..)
+        moveinfo.moved_piece = board.piece_at(move.from_square)
         moveinfo.turn = board.turn
         moveinfo.is_promotion = move.promotion is not None
         
@@ -198,7 +198,6 @@ class GameManager(Node):
                 
         else:
             self.get_logger().error(f'Move {self.pending_move.move_uci} failed: {result.message}')
-            #raise RuntimeError(f'Move queue failed: {result.message}') #? maybe dont raise error?
             status_msg = URChessMoveStatus()
             status_msg.status = URChessMoveStatus.STATUS_FAILED
             status_msg.moveinfo = self.pending_move

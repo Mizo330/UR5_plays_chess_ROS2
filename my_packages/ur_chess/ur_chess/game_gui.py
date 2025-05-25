@@ -282,44 +282,49 @@ class MainWindow(QMainWindow):
 
         if msg.status == URChessMoveStatus.STATUS_FAILED:
             self.movestatus_label.setText("FAILED")
+            reply = QMessageBox.question(
+                self,
+                "Robot move error",
+                "Robot failed the move! Do you want to retry?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No
+            )
+            if reply == QMessageBox.Yes:
+                self.chessboard.moveSelected.emit(msg.moveinfo.move_uci) #re-send move
+        
         elif msg.status == URChessMoveStatus.STATUS_SUCCESS:
             self.movestatus_label.setText("SUCCESS")
             self.chessboard.highlight_move("")
-            if msg.moveinfo:
-                if self.chessboard.mode != "FishVFish":
-                    self.chessboard.turn = not msg.moveinfo.turn
-                    if self.chessboard.singleplayercolor is not None:
-                        if self.chessboard.singleplayercolor!=msg.moveinfo.turn: # Check is last move was #!Not us
-                            QMessageBox.information(
-                                self,
-                                "Notifiction.",
-                                "Your Turn!"
-                            )
-                        if msg.moveinfo.is_checkmate and self.chessboard.singleplayercolor!=msg.moveinfo.turn:
-                            QMessageBox.information(
-                                self,
-                                "Checkmate",
-                                f"{'White' if msg.moveinfo.turn else 'Black'} has delivered a checkmate! Good game!"
-                            )
-                        elif msg.moveinfo.is_check and self.chessboard.singleplayercolor!=msg.moveinfo.turn:
-                            QMessageBox.information(
-                                self,
-                                "Check",
-                                f"{'White' if msg.moveinfo.turn else 'Black'} has delivered a check!"
-                            )
-                    else:
-                        if msg.moveinfo.is_checkmate:
-                            QMessageBox.information(
-                                self,
-                                "Checkmate",
-                                f"{'White' if msg.moveinfo.turn else 'Black'} has delivered a checkmate! Good game!"
-                            )
-                        elif msg.moveinfo.is_check:
-                            QMessageBox.information(
-                                self,
-                                "Check",
-                                f"{'White' if msg.moveinfo.turn else 'Black'} has delivered a check!"
-                            )
+
+            moveinfo = msg.moveinfo
+            if moveinfo and self.chessboard.mode != "FishVFish":
+                self.chessboard.turn = not moveinfo.turn
+                is_player_turn = (
+                    self.chessboard.singleplayercolor is not None and
+                    self.chessboard.singleplayercolor != moveinfo.turn
+                )
+
+                # Notify player if it's their turn
+                if is_player_turn:
+                    QMessageBox.information(
+                        self,
+                        "Notification",
+                        "Your Turn!"
+                    )
+
+                # Checkmate or check notifications
+                if moveinfo.is_checkmate or moveinfo.is_check:
+                    title = "Checkmate" if moveinfo.is_checkmate else "Check"
+                    message = f"{'White' if moveinfo.turn else 'Black'} has delivered a {'checkmate! Good game!' if moveinfo.is_checkmate else 'check!'}"
+
+                    # Only notify if it's the player's turn or no player color is set
+                    if is_player_turn or self.chessboard.singleplayercolor is None:
+                        QMessageBox.information(
+                            self,
+                            title,
+                            message
+                        )
+                        
             self.chessboard.block_move = False
         elif msg.status == URChessMoveStatus.STATUS_IN_PROGRESS:
             self.movestatus_label.setText("IN PROGRESS")

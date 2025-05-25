@@ -280,7 +280,7 @@
         <enable_wind>0</enable_wind>
         <kinematic>0</kinematic>
       </link>
-      <pose frame=''>-0.150000 -0.450000 -0.650000 0 -0 0</pose>
+      <pose frame=''>-0.050000 -0.450000 -0.650000 0 -0 0</pose>
     </model>
     <model name='chessboard'>
       <static>1</static>
@@ -344,7 +344,7 @@
           </surface>
         </collision>
       </link>
-      <pose frame=''>-0.150000 -0.450000 0.400000 0 -0 1.57</pose>
+      <pose frame=''>-0.050000 -0.450000 0.400000 0 -0 1.57</pose>
     </model>
     <model name='chessboard_base'>
       <static>1</static>
@@ -407,7 +407,7 @@
           </surface>
         </collision>
       </link>
-      <pose frame=''>-0.150000 -0.450000 0.350000 0 -0 0</pose>
+      <pose frame=''>-0.050000 -0.450000 0.350000 0 -0 0</pose>
     </model>
 
     <model name='w_pawn_1'>
@@ -508,7 +508,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.018750 -0.356250 0.410000 0 -0 0</pose>
+      <pose>0.081250 -0.356250 0.410000 0 -0 0</pose>
     </model>
 
     <model name='w_pawn_2'>
@@ -609,7 +609,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.056250 -0.356250 0.410000 0 -0 0</pose>
+      <pose>0.043750 -0.356250 0.410000 0 -0 0</pose>
     </model>
 
     <model name='w_pawn_3'>
@@ -710,7 +710,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.093750 -0.356250 0.410000 0 -0 0</pose>
+      <pose>0.006250 -0.356250 0.410000 0 -0 0</pose>
     </model>
 
     <model name='w_pawn_4'>
@@ -811,7 +811,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.131250 -0.356250 0.410000 0 -0 0</pose>
+      <pose>-0.031250 -0.356250 0.410000 0 -0 0</pose>
     </model>
 
     <model name='w_pawn_5'>
@@ -912,7 +912,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.168750 -0.356250 0.410000 0 -0 0</pose>
+      <pose>-0.068750 -0.356250 0.410000 0 -0 0</pose>
     </model>
 
     <model name='w_pawn_6'>
@@ -1013,7 +1013,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.206250 -0.356250 0.410000 0 -0 0</pose>
+      <pose>-0.106250 -0.356250 0.410000 0 -0 0</pose>
     </model>
 
     <model name='w_pawn_7'>
@@ -1114,7 +1114,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.243750 -0.356250 0.410000 0 -0 0</pose>
+      <pose>-0.143750 -0.356250 0.410000 0 -0 0</pose>
     </model>
 
     <model name='w_pawn_8'>
@@ -1215,7 +1215,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.281250 -0.356250 0.410000 0 -0 0</pose>
+      <pose>-0.181250 -0.356250 0.410000 0 -0 0</pose>
     </model>
 
     <model name='w_rook_1'>
@@ -1316,7 +1316,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.018750 -0.318750 0.410000 0 -0 0</pose>
+      <pose>0.081250 -0.318750 0.410000 0 -0 0</pose>
     </model>
 
     <model name='w_knight_1'>
@@ -1417,7 +1417,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.056250 -0.318750 0.410000 0 -0 0</pose>
+      <pose>0.043750 -0.318750 0.410000 0 -0 0</pose>
     </model>
 
     <model name='w_bishop_1'>
@@ -1518,7 +1518,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.093750 -0.318750 0.410000 0 -0 0</pose>
+      <pose>0.006250 -0.318750 0.410000 0 -0 0</pose>
     </model>
 
     <model name='w_queen'>
@@ -1619,7 +1619,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.131250 -0.318750 0.410000 0 -0 0</pose>
+      <pose>-0.031250 -0.318750 0.410000 0 -0 0</pose>
     </model>
 
     <model name='w_king'>
@@ -1720,7 +1720,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.168750 -0.318750 0.410000 0 -0 0</pose>
+      <pose>-0.068750 -0.318750 0.410000 0 -0 0</pose>
     </model>
 
     <model name='w_bishop_2'>
@@ -1821,7 +1821,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.206250 -0.318750 0.410000 0 -0 0</pose>
+      <pose>-0.106250 -0.318750 0.410000 0 -0 0</pose>
     </model>
 
     <model name='w_knight_2'>
@@ -1922,7 +1922,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.243750 -0.318750 0.410000 0 -0 0</pose>
+      <pose>-0.143750 -0.318750 0.410000 0 -0 0</pose>
     </model>
 
     <model name='w_rook_2'>
@@ -2023,7 +2023,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.281250 -0.318750 0.410000 0 -0 0</pose>
+      <pose>-0.181250 -0.318750 0.410000 0 -0 0</pose>
     </model>
 
     <model name='b_pawn_1'>
@@ -2124,7 +2124,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.018750 -0.543750 0.410000 0 -0 0</pose>
+      <pose>0.081250 -0.543750 0.410000 0 -0 0</pose>
     </model>
 
     <model name='b_pawn_2'>
@@ -2225,7 +2225,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.056250 -0.543750 0.410000 0 -0 0</pose>
+      <pose>0.043750 -0.543750 0.410000 0 -0 0</pose>
     </model>
 
     <model name='b_pawn_3'>
@@ -2326,7 +2326,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.093750 -0.543750 0.410000 0 -0 0</pose>
+      <pose>0.006250 -0.543750 0.410000 0 -0 0</pose>
     </model>
 
     <model name='b_pawn_4'>
@@ -2427,7 +2427,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.131250 -0.543750 0.410000 0 -0 0</pose>
+      <pose>-0.031250 -0.543750 0.410000 0 -0 0</pose>
     </model>
 
     <model name='b_pawn_5'>
@@ -2528,7 +2528,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.168750 -0.543750 0.410000 0 -0 0</pose>
+      <pose>-0.068750 -0.543750 0.410000 0 -0 0</pose>
     </model>
 
     <model name='b_pawn_6'>
@@ -2629,7 +2629,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.206250 -0.543750 0.410000 0 -0 0</pose>
+      <pose>-0.106250 -0.543750 0.410000 0 -0 0</pose>
     </model>
 
     <model name='b_pawn_7'>
@@ -2730,7 +2730,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.243750 -0.543750 0.410000 0 -0 0</pose>
+      <pose>-0.143750 -0.543750 0.410000 0 -0 0</pose>
     </model>
 
     <model name='b_pawn_8'>
@@ -2831,7 +2831,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.281250 -0.543750 0.410000 0 -0 0</pose>
+      <pose>-0.181250 -0.543750 0.410000 0 -0 0</pose>
     </model>
 
     <model name='b_rook_1'>
@@ -2932,7 +2932,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.018750 -0.581250 0.410000 0 -0 0</pose>
+      <pose>0.081250 -0.581250 0.410000 0 -0 0</pose>
     </model>
 
     <model name='b_knight_1'>
@@ -3033,7 +3033,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.056250 -0.581250 0.410000 0 -0 3.14</pose>
+      <pose>0.043750 -0.581250 0.410000 0 -0 3.14</pose>
     </model>
 
     <model name='b_bishop_1'>
@@ -3134,7 +3134,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.093750 -0.581250 0.410000 0 -0 0</pose>
+      <pose>0.006250 -0.581250 0.410000 0 -0 0</pose>
     </model>
 
     <model name='b_queen'>
@@ -3235,7 +3235,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.131250 -0.581250 0.410000 0 -0 0</pose>
+      <pose>-0.031250 -0.581250 0.410000 0 -0 0</pose>
     </model>
 
     <model name='b_king'>
@@ -3336,7 +3336,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.168750 -0.581250 0.410000 0 -0 0</pose>
+      <pose>-0.068750 -0.581250 0.410000 0 -0 0</pose>
     </model>
 
     <model name='b_bishop_2'>
@@ -3437,7 +3437,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.206250 -0.581250 0.410000 0 -0 0</pose>
+      <pose>-0.106250 -0.581250 0.410000 0 -0 0</pose>
     </model>
 
     <model name='b_knight_2'>
@@ -3538,7 +3538,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.243750 -0.581250 0.410000 0 -0 3.14</pose>
+      <pose>-0.143750 -0.581250 0.410000 0 -0 3.14</pose>
     </model>
 
     <model name='b_rook_2'>
@@ -3639,7 +3639,7 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>-0.281250 -0.581250 0.410000 0 -0 0</pose>
+      <pose>-0.181250 -0.581250 0.410000 0 -0 0</pose>
     </model>
 
                               <!-- A gazebo links attacher -->

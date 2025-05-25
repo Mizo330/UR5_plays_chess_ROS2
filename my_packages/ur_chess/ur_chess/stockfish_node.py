@@ -14,9 +14,13 @@ class GameManager(Node):
     def __init__(self):
         super().__init__('stockfish_player')
         self.declare_parameter("mode", "FishVFish")
+        self.declare_parameter("stockfish_skill_level", 20)
+        self.declare_parameter("stockfish_contempt", 50)
         
         mode = self.get_parameter("mode").value
-        
+        skill = self.get_parameter("stockfish_skill_level").value
+        contempt = self.get_parameter("stockfish_contempt").value
+
         if mode == "PVP":
             self.get_logger().warn("We play in PVP mode! Theres no need for me!")
             self.get_logger().info(TextColor.FAIL+TextColor.UNDERLINE+"Goodbye!"+TextColor.ENDC)
@@ -31,8 +35,13 @@ class GameManager(Node):
             
         self.fen = chess.STARTING_FEN
         self.stockfish = Stockfish(path="/home/appuser/ros2_ws/src/stockfish/stockfish-ubuntu-x86-64-avx2")
-        self.stockfish.set_fen_position(self.fen)
+        self.stockfish.update_engine_parameters({
+                "Skill Level": skill,
+                "Contempt": contempt
+            })
+
         
+        self.stockfish.set_fen_position(self.fen)
         self.stockfish.get_best_move()
         self.stockfish.get_evaluation()
         
