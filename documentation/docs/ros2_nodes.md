@@ -40,7 +40,7 @@ The **MoveIt Controller** wraps the `moveit_py` API, enabling trajectory plannin
   - For simplicity, each piece is represented as a cylinder for collision avoidance purposes.
 
 <p align="center">
-  <img src="/images/planning_scene_monitor.png" width="800"/>
+  <img src="images/planning_scene_monitor.png" width="800"/>
 </p>
 Although the controller was initially designed for full asynchronous operation—planning all individual motions ahead of time and executing them in sequence—this approach turned out to be impractical due to the complexity of real-time scene updates and hardware timing constraints.
 
@@ -67,7 +67,7 @@ While not fully parallel or pipelined, this approach strikes a balance between s
 The original ROS1 version lacked a full graphical interface, but for a system like this, having clear control and visual feedback is essential. We implemented the GUI using **PyQt5**, a robust and well-supported toolkit for desktop applications.
 
 <p align="center">
-  <img src="/images/gui.png" width="600"/>
+  <img src="images/gui.png" width="600"/>
 </p>
 
 Through the GUI, users can start or stop the game as described in the Game Manager node. By changing game modes -  **AI vs AI**, **Player vs AI**, or **Player vs Player** - in the launchfile, the GUI use changes from just feedback to a full playable game interface. Inputs are only accepted when it's the player's turn; otherwise, interaction is disabled to prevent invalid or conflicting actions.
@@ -81,7 +81,7 @@ In Player vs AI or PvP mode, users can select and move pieces on the board. In t
 ### Stockfish Node
 
 <p align="left">
-  <img src="/images/stockfish.png" width="300" style="float: left; margin-right: 20px;" />
+  <img src="images/stockfish.png" width="300" style="float: left; margin-right: 20px;" />
 </p>
 
 This node runs the chess AI using the [Python Stockfish package](https://pypi.org/project/stockfish/). At startup, the engine is dynamically downloaded via Docker, and its behavior can be fine-tuned using parameters such as **Skill Level**, **Contempt**, or **Depth** (e.g., to adjust how aggressively it plays or how deep it searches).
