@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <link rel="shortcut icon" href="../img/favicon.ico" />
-    <title>Gazebo simulation - Project documentation</title>
+    <title>Gazebo simulation - UR5 Chess ROS2</title>
     <link rel="stylesheet" href="../css/theme.css" />
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
@@ -30,7 +30,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
     <div class="wy-side-scroll">
       <div class="wy-side-nav-search">
-          <a href=".." class="icon icon-home"> Project documentation
+          <a href=".." class="icon icon-home"> UR5 Chess ROS2
         </a><div role="search">
   <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
       <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
@@ -45,6 +45,14 @@
               </ul>
               <ul class="current">
                 <li class="toctree-l1 current"><a class="reference internal current" href="./">Gazebo simulation</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#about-the-world">About the world</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#key-parameters">Key Parameters</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#generating-and-launching-the-world">Generating and launching the world</a>
+    </li>
+    </ul>
                 </li>
               </ul>
               <ul>
@@ -62,7 +70,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
       <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="..">Project documentation</a>
+          <a href="..">UR5 Chess ROS2</a>
         
       </nav>
       <div class="wy-nav-content">
@@ -78,7 +86,50 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <p>adssa</p>
+                <h1 id="gazebo-simulation">Gazebo simulation</h1>
+<p>This project sets up a custom Gazebo simulation environment containing a chess table, a chessboard base, the chessboard itself with all 32 chess pieces placed on the board. The simulation is integrated into a ROS 2 package and includes a Python script to automatically generate the .world file with the desired models and poses.</p>
+<p>At this point we would like to acknowledge <a href="https://github.com/arunkru1998">Arun</a> for his cintribution with the chess models which are available in his <a href="https://github.com/arunkru1998/chessrobo#">ROS1 chessrobo repository</a>.</p>
+<h2 id="about-the-world">About the world</h2>
+<p>The Gazebo world file (<code>chess_room.world</code>) is generated <strong>dynamically</strong> using the <code>generate_chess_sdf.py</code> script. The script places all models (chessboard and pieces) based on a flexible parameter setup.</p>
+<p align="center">
+  <img src="/images/gazebo_world_chess.png" width="800" />
+</p>
+
+<h2 id="key-parameters">Key Parameters</h2>
+<p>The following parameters control how the models are positioned in the world:</p>
+<table>
+<thead>
+<tr>
+<th><strong>Parameter</strong></th>
+<th><strong>Description</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tile_size</code></td>
+<td>The size of one chess square (in meters). Determines spacing of the pieces.</td>
+</tr>
+<tr>
+<td><code>a1</code></td>
+<td>World coordinates (x, y) where the A1 square of the board is placed.</td>
+</tr>
+<tr>
+<td><code>orientaion</code></td>
+<td>Sets the orientation of the board.</td>
+</tr>
+</tbody>
+</table>
+<p>These parameters can be located at the <code>ur_chess_config.yaml</code> file modification should be made here.
+Moreover, the height of elements are adjustable too (e.g. table or chess board height).</p>
+<h2 id="generating-and-launching-the-world">Generating and launching the world</h2>
+<p>The generation is quite simple. <strong>After</strong> modifíing the parameters run the generation script.</p>
+<pre><code class="language-bash">ros2 run chess_gazebo_world generate_chess.sdf.py
+</code></pre>
+<p>After generating the world the simulation can be launched. Note that with this launch the chess game <strong>will not be active</strong>, only RVizz and Gazebo will be launched with the simulation of controlling the robot in the generated world.</p>
+<pre><code class="language-bash">colcon build
+source install/setup.bash
+ros2 launch chess_gazebo_world chess_world_with_ur.launch.py
+</code></pre>
               
             </div>
           </div><footer>
