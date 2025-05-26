@@ -1,7 +1,7 @@
 # UR5 Chess ROS 2 — Documentation
 
 <p align="center">
-  <img src="/images/index_cover.png" width="800" />
+  <img src="images/index_cover.png" width="800" />
 </p>
 
 This documentation covers our university project, which involved converting the original [ROS 1 version of UR5 Chess](https://github.com/MOGI-ROS/ROS_Chess) to ROS 2.
