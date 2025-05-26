@@ -52,6 +52,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#generating-and-launching-the-world">Generating and launching the world</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#using-the-world">Using the world</a>
+    </li>
     </ul>
                 </li>
               </ul>
@@ -130,6 +132,9 @@ Moreover, the height of elements are adjustable too (e.g. table or chess board h
 source install/setup.bash
 ros2 launch chess_gazebo_world chess_world_with_ur.launch.py
 </code></pre>
+<h2 id="using-the-world">Using the world</h2>
+<p>If we would like to <strong>run the chess game itself</strong> with modified world generation, we <strong>DO NOT HAVE TO generate the world separately</strong>.<br />
+This is because the <code>ur_chess.launch.py</code> file <strong>automatically calls the world generation process</strong>, so launching it will ensure that the world is built with the current configuration.</p>
               
             </div>
           </div><footer>
