@@ -49,10 +49,22 @@
               </ul>
               <ul class="current">
                 <li class="toctree-l1 current"><a class="reference internal current" href="./">ROS2 nodes</a>
-                </li>
-              </ul>
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../stockfish/">Stockfish</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#core-dependencies">Core Dependencies</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#nodes">Nodes</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#game-manager">Game Manager</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#moveit-controller">Moveit controller</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#graphical-interface-gui">Graphical Interface (GUI)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#stockfish-node">Stockfish Node</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
                 </li>
               </ul>
       </div>
@@ -78,13 +90,86 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                
+                <h1 id="nodes-and-interfaces-of-ur_chess">Nodes and Interfaces of UR_Chess</h1>
+<h2 id="core-dependencies">Core Dependencies</h2>
+<p>In addition to ROS 2, the project relies on several key packages:</p>
+<ul>
+<li><strong>UR ROS 2 Driver</strong> (with gripper support): Provides real and simulated control of the UR5 arm and RH-P12-RN-A gripper. See <a href="../">Introduction</a> for more.</li>
+<li><strong>MoveIt &amp; moveit_py</strong>: Used for motion planning and trajectory execution.</li>
+<li><strong><a href="https://python-chess.readthedocs.io/en/latest/">python-chess</a></strong>: A Python library that manages the game logic, including move validation, board state updates, and FEN/PGN parsing. It’s an essential component for managing chess rules.</li>
+<li><strong><a href="https://pypi.org/project/stockfish/">stockfish</a></strong> Python wrapper: Used to configure and interact with the Stockfish engine from Python.</li>
+</ul>
+<hr />
+<h2 id="nodes">Nodes</h2>
+<h3 id="game-manager">Game Manager</h3>
+<p><img alt="Game Manager Logic" src="../images/manger.drawio.png" /></p>
+<p>The <strong>Game Manager</strong> is the central coordinator of the system. It enforces the rules, tracks game state, and mediates communication between nodes.</p>
+<ul>
+<li>It listens on the <code>/game_control</code> topic for a command to start a new game, which moves the UR5 to its initial position.</li>
+<li>Once initialized, it listens on <code>/current_move</code> for player or chess moves.</li>
+<li>Moves are validated using a <code>python-chess</code> <code>Board</code> instance. Invalid moves (e.g. wrong turn, illegal move, in-check) are rejected.</li>
+<li>Validated moves are forwarded to the MoveIt controller, and the system enters an "in progress" state, during which new moves are ignored.</li>
+<li>When a move finishes successfully, it is committed to the game board and the updated FEN is published on <code>/chessboard_state</code>.</li>
+<li>During each state change, the state of the move is published <code>/move_status</code>. This topic is mostly for debugging, and for the GUI feedback and flow controtl.</li>
+</ul>
+<p>Although Stockfish usually generates legal moves, this validation layer ensures robustness—especially in user-controlled modes.</p>
+<hr />
+<h3 id="moveit-controller">Moveit controller</h3>
+<p>The <strong>MoveIt Controller</strong> wraps the <code>moveit_py</code> API, enabling trajectory planning and execution with collision checking. It requires the UR simulation to be running and connected.</p>
+<ul>
+<li>Upon receiving a move request, the controller decodes it and handles special moves (e.g. <strong>castling</strong> or <strong>captures</strong>) by splitting them into appropriate sub-actions.</li>
+<li>For example, in castling, the rook is moved before the king, even if the UCI command refers to the king only.</li>
+<li>The chessboard and all pieces are dynamically managed in the <strong>Planning Scene Monitor</strong> to reflect their current positions.</li>
+<li>For simplicity, each piece is represented as a cylinder for collision avoidance purposes.</li>
+</ul>
+<p align="center">
+  <img src="/images/planning_scene_monitor.png" width="800"/>
+</p>
+<p>Although the controller was initially designed for full asynchronous operation—planning all individual motions ahead of time and executing them in sequence—this approach turned out to be impractical due to the complexity of real-time scene updates and hardware timing constraints.</p>
+<p>Instead, we implemented a <strong>semi-synchronous execution model</strong>:</p>
+<ul>
+<li>Each pick-and-place operation (i.e. a chess move) is broken into <strong>three distinct phases</strong>:</li>
+<li><strong>Grasping</strong> the selected piece.</li>
+<li><strong>Transporting</strong> the piece to the destination.</li>
+<li>
+<p><strong>Releasing</strong> the piece.</p>
+</li>
+<li>
+<p>Between each phase, we update the <strong>planning scene</strong> to reflect changes:</p>
+</li>
+<li>When grasping, the piece is attached to the robot in the scene.</li>
+<li>When releasing, the piece is detached and added back to the board as a static object.</li>
+</ul>
+<p>This stepwise structure allowed us to:
+- Dynamically manage the scene for collision-aware planning.
+- Simplify coordination with the Game Manager.
+- Avoid planning errors due to outdated collision objects.</p>
+<p>While not fully parallel or pipelined, this approach strikes a balance between safety, control, and responsiveness—critical for handling precise manipulations in a constrained space like a chessboard.</p>
+<h3 id="graphical-interface-gui">Graphical Interface (GUI)</h3>
+<p>The original ROS1 version lacked a full graphical interface, but for a system like this, having clear control and visual feedback is essential. We implemented the GUI using <strong>PyQt5</strong>, a robust and well-supported toolkit for desktop applications.</p>
+<p align="center">
+  <img src="/images/gui.png" width="600"/>
+</p>
+
+<p>Through the GUI, users can start or stop the game as described in the Game Manager node. By changing game modes -  <strong>AI vs AI</strong>, <strong>Player vs AI</strong>, or <strong>Player vs Player</strong> - in the launchfile, the GUI use changes from just feedback to a full playable game interface. Inputs are only accepted when it's the player's turn; otherwise, interaction is disabled to prevent invalid or conflicting actions.</p>
+<p>In Player vs AI or PvP mode, users can select and move pieces on the board. In the case of illegal move, the game managger will resend an error message what was wrong about it. The GUI also provides visual feedback, including pop-up messages for check and checkmate—though these are disabled during the AI’s turn to avoid clutter.</p>
+<blockquote>
+<p><strong>Note:</strong> Due to ROS’s distributed nature, it’s technically possible to launch two GUIs on different devices within the same ROS network for PvP games. While this setup was tested and functional, full integration for a seamless experience remains a future goal.</p>
+</blockquote>
+<hr />
+<h3 id="stockfish-node">Stockfish Node</h3>
+<p align="left">
+  <img src="/images/stockfish.png" width="300" style="float: left; margin-right: 20px;" />
+</p>
+
+<p>This node runs the chess AI using the <a href="https://pypi.org/project/stockfish/">Python Stockfish package</a>. At startup, the engine is dynamically downloaded via Docker, and its behavior can be fine-tuned using parameters such as <strong>Skill Level</strong>, <strong>Contempt</strong>, or <strong>Depth</strong> (e.g., to adjust how aggressively it plays or how deep it searches).</p>
+<p>The node subscribes to the <code>/chessboard_state</code> topic. Upon receiving a FEN string, it passes it to the engine and retrieves the best move. Thanks to the compact nature of FEN, the full board state—including whose turn it is—is preserved without needing additional context.</p>
+<p>When the game is in <strong>PvP mode</strong>, the node shuts down immediately on launch, as no AI is needed. In <strong>Player vs AI</strong>, it only computes and publishes moves when it's the AI’s turn.</p>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
         <a href="../gazebo_sim/" class="btn btn-neutral float-left" title="Gazebo simulation"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../stockfish/" class="btn btn-neutral float-right" title="Stockfish">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -109,8 +194,6 @@
     
       <span><a href="../gazebo_sim/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
-    
-      <span><a href="../stockfish/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>
