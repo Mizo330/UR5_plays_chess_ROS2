@@ -1,29 +1,30 @@
-# UR5E robot plays chess - ROS2 implementation
 <p align="center">
-  <img src="/media/demo.gif" width="800" />
+  <h1 align="center">UR5E robot plays chess - ROS2</h1>
+  <p align="center">
+    <img src="https://img.shields.io/badge/python-3.12-blue"/>
+    <img src="https://img.shields.io/badge/ROS2-%20Jazzy-blue?logo=ros&logoColor=white" />
+    <a href="https://mizo330.github.io/UR5_plays_chess_ROS2/">
+      <img src="https://img.shields.io/badge/%20Pages-Documentation-181717?logo=github&logoColor=white&labelColor=gray&color=blue"/>
+    </a>
+    <a href="LICENSE">
+    <img src="https://img.shields.io/badge/license-MIT-purple"/>
+    </a>
+    <img src="/media/demo.gif" width="800" />
+  </p>
 </p>
 
+
+## Documentation
+
+The documentation about the workings of this project and detailed descpition about its usage can be found in the [**project doc page**](https://mizo330.github.io/UR5_plays_chess_ROS2/).
+
 ### TODOS:
-- [x] Make Stockfish chess node
-- [x] Make a world with chess scene
-  - [x] Make it dynamic with params
-  - [x] Fix (?) arm speed issue : increase velocity and acc factors in cpp.yaml
-- [x] Make moveit controller
-  - [x] Refine controller with moveit_py
-- [x] Make estop in gui
-- [x] Setup driver and gazebo for the [RH-P12-RN-A](https://github.com/ROBOTIS-GIT/RH-P12-RN-A) gripper
-- [x] Add collision geometry for RVIZ
-  - [x] Fully sync with gazebo params (same .yaml)
 - [ ] Refine code
   - [ ] Fix game controls (~~play~~, pause, stop)
   - [ ] Better error handling (~90%done)
-  - [x] Make a resend promt
   - [ ] Config for constraints, maybe dynamic based on borad loc.
-  - [x] Handle en passant, checkmate
-- [x] Make it playable with gui?
-  - [x] PvP, PvAI, AIvAI
-- [x] Update README
-- [ ] Make doc with page
+- [ ] Update README
+- [ ] Update doc page
 - [ ] **Test driver on real life robot**
   - [ ] Make grabber control interface for ROS2
 
