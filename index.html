@@ -42,11 +42,11 @@
               <ul class="current">
                 <li class="toctree-l1 current"><a class="reference internal current" href=".">Overwiev</a>
     <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#project-environment">Project environment</a>
+    <li class="toctree-l2"><a class="reference internal" href="#project-environment">Project Environment</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#third-party-packages">Third party packages</a>
+    <li class="toctree-l2"><a class="reference internal" href="#third-party-packages">Third-Party Packages</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#poject-sturcture">Poject sturcture</a>
+    <li class="toctree-l2"><a class="reference internal" href="#project-structure">Project Structure</a>
     </li>
     </ul>
                 </li>
@@ -86,15 +86,28 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="ur5-chess-ros2-documentation">UR5 Chess ROS2 - Documentation</h1>
-<p>This is a full documentaion for our universisty project, that was about converting a <a href="https://github.com/MOGI-ROS/ROS_Chess">ROS1 project of the same name</a> to ROS2. 
-During the course of development, we realized that due to the massive changes in every code since then, an easy conversion was not on the table. Most of the code was unusable for ROS2, so we decided to start from scratch.</p>
-<h2 id="project-environment">Project environment</h2>
-<p>We decided to use <strong>Docker</strong> which helped us avoid issues with compatibility, exports and helped us trim the project by not including third-party packages, drivers directly in the repo. For ease of handling, we have made scipts to run and build the container.</p>
-<h2 id="third-party-packages">Third party packages</h2>
-<p>Before talking about our own packages, we must say our acknowlegment to <a href="https://github.com/DanielBrenn"><strong><em>DanielBrenn</em></strong></a> for making the necessary changes for the UR drivers to handle the <a href="https://github.com/ROBOTIS-GIT/RH-P12-RN-A">RH-P12-RN-A</a> gripper in gazebo and MoveIt. And also for general help in the project.</p>
-<h2 id="poject-sturcture">Poject sturcture</h2>
+                <h1 id="ur5-chess-ros-2-documentation">UR5 Chess ROS 2 — Documentation</h1>
+<p align="center">
+  <img src="/images/index_cover.png" width="800" />
+</p>
+
+<p>This documentation covers our university project, which involved converting the original <a href="https://github.com/MOGI-ROS/ROS_Chess">ROS 1 version of UR5 Chess</a> to ROS 2.</p>
+<p>During development, we quickly realized that a straightforward migration was not feasible. Due to significant architectural and API changes in ROS 2, much of the original codebase was incompatible. As a result, we opted to rebuild the system from the ground up.</p>
+<hr />
+<h2 id="project-environment">Project Environment</h2>
+<p>To ensure portability and minimize compatibility issues, we used <strong>Docker</strong>. This approach allowed us to avoid installing third-party packages and drivers directly into the repository. For convenience, we created scripts to handle building and running the container.</p>
+<hr />
+<h2 id="third-party-packages">Third-Party Packages</h2>
+<p>Before diving into our custom packages, we would like to acknowledge <a href="https://github.com/DanielBrenn"><strong>DanielBrenn</strong></a> for his contributions. His modifications to the UR driver made it possible to control the <a href="https://github.com/ROBOTIS-GIT/RH-P12-RN-A">RH-P12-RN-A gripper</a> in both Gazebo and MoveIt, and his general support throughout the project was invaluable.</p>
+<hr />
+<h2 id="project-structure">Project Structure</h2>
 <p><img alt="projectgraph" src="images/ur_chess_graph.png" /></p>
+<p>The system is orchestrated by the <strong>game manager</strong> node. It processes the current board state and robot status, handles incoming messages, and validates moves. Once a move is verified, the game manager delegates execution to the MoveIt controller. It also publishes feedback such as the game state in <a href="https://www.chess.com/terms/fen-chess">FEN</a> format or the last move in <a href="https://en.wikipedia.org/wiki/Universal_Chess_Interface">UCI</a> notation. Most decision-making and external interfaces are centralized here to ensure consistent message flow.</p>
+<p>The <strong>GUI node</strong> handles user interaction and provides feedback through an interactive, clickable chessboard. It supports <strong>AI vs AI</strong>, <strong>PvP</strong>, and <strong>Player vs AI</strong> modes with selectable sides. The GUI manages turn-based control, disabling input when it’s not the player’s turn.</p>
+<p>The <strong>Stockfish node</strong> receives FEN strings and responds with UCI moves. It adapts to the selected game mode—for example, it disables itself in <strong>PvP</strong> mode and only plays when it’s the AI’s turn in other modes.</p>
+<p>The <strong>MoveIt controller</strong> wraps around <code>moveit_py</code>, which itself is a Python interface to the underlying MoveIt C++ libraries. This node translates UCI move commands into executable trajectories and sends them to the robot. It also handles special cases like castling and piece captures.</p>
+<hr />
+<p>For a deeper dive into each ROS 2 node and its internal workings, see the <a href="./ros2_nodes">ros2_nodes</a> section.</p>
               
             </div>
           </div><footer>
@@ -143,5 +156,5 @@ During the course of development, we realized that due to the massive changes in
 
 <!--
 MkDocs version : 1.5.3
-Build Date UTC : 2025-05-26 11:39:56.070712+00:00
+Build Date UTC : 2025-05-26 14:13:35.458967+00:00
 -->
