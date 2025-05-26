@@ -5,4 +5,3 @@ nav:
   - Overwiev: index.md
   - Gazebo simulation: gazebo_sim.md
   - ROS2 nodes: ros2_nodes.md
-  - Stockfish: stockfish.md
