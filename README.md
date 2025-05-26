@@ -23,8 +23,8 @@ The documentation about the workings of this project and detailed descpition abo
   - [ ] Fix game controls (~~play~~, pause, stop)
   - [ ] Better error handling (~90%done)
   - [ ] Config for constraints, maybe dynamic based on borad loc.
-- [ ] Update README
-- [ ] Update doc page
+- [x] Update README
+- [x] Update doc page
 - [ ] **Test driver on real life robot**
   - [ ] Make grabber control interface for ROS2
 
