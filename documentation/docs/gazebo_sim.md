@@ -9,7 +9,7 @@ At this point we would like to acknowledge [Arun](https://github.com/arunkru1998
 The Gazebo world file (`chess_room.world`) is generated **dynamically** using the `generate_chess_sdf.py` script. The script places all models (chessboard and pieces) based on a flexible parameter setup.
 
 <p align="center">
-  <img src="images/gazebo_world_chess.png" width="800" />
+  <img src="/images/gazebo_world_chess.png" width="800" />
 </p>
 
 ## Key Parameters
