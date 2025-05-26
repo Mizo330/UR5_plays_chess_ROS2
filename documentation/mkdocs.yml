@@ -1,4 +1,4 @@
-site_name: Project documentation
+site_name: UR5 Chess ROS2
 theme:
   name: readthedocs
 nav:
