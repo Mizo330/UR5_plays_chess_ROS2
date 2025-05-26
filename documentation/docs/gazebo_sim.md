@@ -41,4 +41,11 @@ source install/setup.bash
 ros2 launch chess_gazebo_world chess_world_with_ur.launch.py
 ```
 
+## Using the world
+
+If we would like to **run the chess game itself** with modified world generation, we **DO NOT HAVE TO generate the world separately**.  
+This is because the `ur_chess.launch.py` file **automatically calls the world generation process**, so launching it will ensure that the world is built with the current configuration.
+
+
+
 
