@@ -123,7 +123,7 @@
 <li>For simplicity, each piece is represented as a cylinder for collision avoidance purposes.</li>
 </ul>
 <p align="center">
-  <img src="images/planning_scene_monitor.png" width="800"/>
+  <img src="/images/planning_scene_monitor.png" width="800"/>
 </p>
 <p>Although the controller was initially designed for full asynchronous operation—planning all individual motions ahead of time and executing them in sequence—this approach turned out to be impractical due to the complexity of real-time scene updates and hardware timing constraints.</p>
 <p>Instead, we implemented a <strong>semi-synchronous execution model</strong>:</p>
@@ -148,7 +148,7 @@
 <h3 id="graphical-interface-gui">Graphical Interface (GUI)</h3>
 <p>The original ROS1 version lacked a full graphical interface, but for a system like this, having clear control and visual feedback is essential. We implemented the GUI using <strong>PyQt5</strong>, a robust and well-supported toolkit for desktop applications.</p>
 <p align="center">
-  <img src="images/gui.png" width="600"/>
+  <img src="/images/gui.png" width="600"/>
 </p>
 
 <p>Through the GUI, users can start or stop the game as described in the Game Manager node. By changing game modes -  <strong>AI vs AI</strong>, <strong>Player vs AI</strong>, or <strong>Player vs Player</strong> - in the launchfile, the GUI use changes from just feedback to a full playable game interface. Inputs are only accepted when it's the player's turn; otherwise, interaction is disabled to prevent invalid or conflicting actions.</p>
@@ -159,7 +159,7 @@
 <hr />
 <h3 id="stockfish-node">Stockfish Node</h3>
 <p align="left">
-  <img src="images/stockfish.png" width="300" style="float: left; margin-right: 20px;" />
+  <img src="/images/stockfish.png" width="300" style="float: left; margin-right: 20px;" />
 </p>
 
 <p>This node runs the chess AI using the <a href="https://pypi.org/project/stockfish/">Python Stockfish package</a>. At startup, the engine is dynamically downloaded via Docker, and its behavior can be fine-tuned using parameters such as <strong>Skill Level</strong>, <strong>Contempt</strong>, or <strong>Depth</strong> (e.g., to adjust how aggressively it plays or how deep it searches).</p>
