@@ -52,3 +52,6 @@ CATKIN_IGNORE
 
 #Our custom files
 docker/.params
+
+#Videos
+*.mp4
