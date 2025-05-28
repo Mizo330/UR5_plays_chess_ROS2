@@ -6,8 +6,13 @@
     # moveit_controller_cfg: /my/custom/path/to/moveit_controllers.yaml
     max_plan_tries: 10 #Set how many plan tries are allowed per trajectory (at least 5 is recommended)
 
-    stockfish_skill_level: 20
-    stockfish_contempt: 30
+    ##Stockfish##
+    #player 1 - white (or the opponent in player vs ai)
+    stockfish1_skill_level: 5
+    stockfish1_contempt: 30
+    #player 2 - black
+    stockfish2_skill_level: 20
+    stockfish2_contempt: 40
 
     #board layout
     a1 : [0.1, -0.3, 0.4]

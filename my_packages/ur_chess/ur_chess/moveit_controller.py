@@ -244,8 +244,8 @@ class MoveItCommander(Node):
         start_x, start_y, start_z = start_pos
         end_x, end_y, end_z = end_pos
         if piece_type == 'p':
-            end_z -= self.tile_size*0.3
-            start_z -= self.tile_size*0.3
+            end_z -= self.tile_size*0.2
+            start_z -= self.tile_size*0.2
         trajectories = self.plan_grab_piece(start_x,start_y,start_z)
         for traj in trajectories:
             self.execution_manager.push(traj, controllers=[])
@@ -357,6 +357,7 @@ class MoveItCommander(Node):
     
     def plan_grab_piece(self,start_x, start_y, start_z):
         waypoints = []
+        waypoints.append(Waypoint(gripper="open"))
         waypoints.append(Waypoint(position=make_point(start_x,start_y,start_z+self.chesspiece_clearance),gripper="open")) #above piece
         waypoints.append(Waypoint(position=make_point(start_x,start_y,start_z),gripper="close")) #at the piece
         trajectories = self.plan_move_trajectory(waypoints)
@@ -367,7 +368,7 @@ class MoveItCommander(Node):
         waypoints.append(Waypoint(position=make_point(start_x,start_y,start_z)))
         waypoints.append(Waypoint(position=make_point(start_x,start_y,start_z+self.chesspiece_clearance)))
         waypoints.append(Waypoint(position=make_point(end_x,end_y,end_z+self.chesspiece_clearance)))
-        waypoints.append(Waypoint(position=make_point(end_x,end_y,end_z), gripper="open"))
+        waypoints.append(Waypoint(position=make_point(end_x,end_y,end_z+0.005), gripper="open"))
         trajectories = self.plan_move_trajectory(waypoints)
         return trajectories
 
@@ -410,10 +411,12 @@ class MoveItCommander(Node):
             if wp.named_position:
                 pc = self.ur_commander_arm
                 pc.set_goal_state(configuration_name=wp.named_position)
-            else:
+                msg, last_joint_positions = plan(pc, last_joint_positions)
+                trajectories.append(msg)
+            elif wp.position:
                 pc = self.create_pc_from_point(wp.position.x, wp.position.y, wp.position.z)
-            msg, last_joint_positions = plan(pc, last_joint_positions)
-            trajectories.append(msg)
+                msg, last_joint_positions = plan(pc, last_joint_positions)
+                trajectories.append(msg)
             
             if wp.gripper:
                 gripper_pc = self.create_gripper_pc(open=(wp.gripper == "open"))

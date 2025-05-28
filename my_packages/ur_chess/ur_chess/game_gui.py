@@ -251,7 +251,7 @@ class MainWindow(QMainWindow):
         self.pause_button.setFixedSize(50,50)
         pause_lbl = QLabel('Pause'); pause_lbl.setAlignment(Qt.AlignCenter)
         pause_layout = QVBoxLayout(); pause_layout.addWidget(self.pause_button); pause_layout.addWidget(pause_lbl)
-        ctrl.addLayout(pause_layout)
+        #ctrl.addLayout(pause_layout)
 
         self.stop_button = QToolButton()
         self.stop_button.setIcon(style.standardIcon(QStyle.SP_MediaStop))

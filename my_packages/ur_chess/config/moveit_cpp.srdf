@@ -52,10 +52,10 @@
         <joint name="rh_r1_joint" value="0.0"/>
     </group_state>
     <group_state name="part_open" group="gripper">
-        <joint name="rh_r1_joint" value="0.8"/>
+        <joint name="rh_r1_joint" value="0.87"/>
     </group_state>
     <group_state name="grab_piece" group="gripper">
-        <joint name="rh_r1_joint" value="0.98"/>
+        <joint name="rh_r1_joint" value="0.96"/>
     </group_state>
     <group_state name="closed" group="gripper">
         <joint name="rh_r1_joint" value="1.0"/>
