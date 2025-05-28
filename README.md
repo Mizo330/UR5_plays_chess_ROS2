@@ -6,7 +6,7 @@
     <a href="https://mizo330.github.io/UR5_plays_chess_ROS2/">
       <img src="https://img.shields.io/badge/%20Pages-Documentation-181717?logo=github&logoColor=white&labelColor=gray&color=blue"/>
     </a>
-    <a href="https://www.youtube.com/watch?v=9IK0mxdCMDk">
+    <a href="https://youtu.be/9IK0mxdCMDk">
        <img src="https://img.shields.io/badge/YouTube-Demo%20Video-red?logo=youtube&style=flat" />
     </a>
     <a href="LICENSE">
@@ -21,7 +21,7 @@
 
 The documentation about the workings of this project and detailed descpition about its usage can be found in the **[project doc page](https://mizo330.github.io/UR5_plays_chess_ROS2/)**.
 
-**<u>You can watch a full demo match, uploaded on [Youtube](https://www.youtube.com/watch?v=9IK0mxdCMDk).</u>**
+**<u>You can watch a full demo match, uploaded on [Youtube](https://youtu.be/9IK0mxdCMDk).</u>**
 
 
 ### TODOS:
