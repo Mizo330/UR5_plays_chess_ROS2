@@ -26,21 +26,32 @@ USER root
 ###
 
 #expect build-time argument
-ARG HOST_USER_GROUP_ARG
-#create group appuser with id 1001
-#add appuser to the group with the same id as the host user
-#this is important, because it allows to mount the host user home directory into the container
-#this way, the container will have the same permissions as the host user
-#create appuser user with id 1001 with home; bash as shell; and in the appuser group
-#change password of appuser to admin so that we can sudo inside the container
-#add appuser to sudo, hostgroup and all default groups
-#copy default bashrc and add ROS sourcing
-RUN groupadd -g 1001 appuser && \
-    useradd --create-home --shell /bin/bash -u 1001 -g appuser appuser && \
-    echo 'appuser:admin' | chpasswd &&\
-    usermod -aG $HOST_USER_GROUP_ARG appuser &&\
-    usermod -aG sudo,plugdev,video,adm,cdrom,dip,dialout appuser && \
-    cp /etc/skel/.bashrc /home/appuser/  
+ARG HOST_GID
+ARG HOST_UID
+# Set up a non-root user called 'appuser' that matches the host user's UID and GID.
+# This ensures that files created by the container are owned correctly on the host system when using volume mounts.
+# The user is added to useful system groups to allow access to hardware devices (e.g., USB, audio, video),
+# and basic shell configuration is copied to provide a proper interactive environment.
+RUN set -eux; \
+    # Delete existing user/group if they conflict with the desired UID/GID
+    if getent passwd "${HOST_UID}" > /dev/null; then \
+        OLD_USER=$(getent passwd "${HOST_UID}" | cut -d: -f1); \
+        echo "Removing user ${OLD_USER} with UID ${HOST_UID}"; \
+        userdel -r "${OLD_USER}" || true; \
+    fi; \
+    if getent group "${HOST_GID}" > /dev/null; then \
+        OLD_GROUP=$(getent group "${HOST_GID}" | cut -d: -f1); \
+        echo "Removing group ${OLD_GROUP} with GID ${HOST_GID}"; \
+        groupdel "${OLD_GROUP}" || true; \
+    fi; \
+    \
+    # Create 'appuser' with desired UID/GID
+    groupadd -g "${HOST_GID}" appuser; \
+    useradd --create-home --shell /bin/bash -u "${HOST_UID}" -g appuser appuser; \
+    echo 'appuser:admin' | chpasswd; \
+    usermod -aG sudo,plugdev,video,adm,cdrom,dip,dialout appuser; \
+    cp /etc/skel/.bashrc /home/appuser/ || true; \
+    chown "${HOST_UID}:${HOST_GID}" /home/appuser/.bashrc || true
 
 
 ###Install the project
@@ -132,19 +143,25 @@ RUN apt-get update && \
 
 #Install UR driver and the RH-P12-RN-A from source, using the gripper branch
 
-#Clone a bunch of repos
-#! Dynamic distro choise wont work, as each repo has only one viable branch.
+# #Clone a bunch of repos
+# #! Dynamic distro choise wont work, as each repo has only one viable branch.
 USER appuser
 RUN cd /home/appuser/ros2_ws/src &&\
-    git clone -b humble https://github.com/ros-industrial/ur_msgs &&\
-    git clone -b ros2-jazzy-gripper https://github.com/MOGI-ROS/Universal_Robots_ROS2_GZ_Simulation &&\
-    git clone -b ros2-jazzy-gripper https://github.com/MOGI-ROS/Universal_Robots_ROS2_Description &&\
-    git clone -b ros2-jazzy-gripper https://github.com/MOGI-ROS/Universal_Robots_ROS2_Driver &&\
-    git clone -b ros2-jazzy https://github.com/dudasdavid/RH-P12-RN-A &&\
-    git clone https://github.com/UniversalRobots/Universal_Robots_Client_Library &&\
-    cd Universal_Robots_Client_Library/ &&\
-    git checkout tags/1.9.0
+#     git clone -b humble https://github.com/ros-industrial/ur_msgs &&\
+#     git clone -b ros2-jazzy-gripper https://github.com/MOGI-ROS/Universal_Robots_ROS2_GZ_Simulation &&\
+#     git clone -b ros2-jazzy-gripper https://github.com/MOGI-ROS/Universal_Robots_ROS2_Description &&\
+#     git clone -b ros2-jazzy-gripper https://github.com/MOGI-ROS/Universal_Robots_ROS2_Driver &&\
+    git clone -b ros2-jazzy https://github.com/dudasdavid/RH-P12-RN-A
+#     git clone https://github.com/UniversalRobots/Universal_Robots_Client_Library &&\
+#     cd Universal_Robots_Client_Library/ &&\
+#     git checkout tags/1.9.0
 
+USER root
+RUN apt-get update && \
+    apt-get install -y\
+    ros-$ROS_DISTRO-ur \
+    ros-$ROS_DISTRO-ur-simulation-gz \
+    ros-$ROS_DISTRO-moveit-config
 
 #build the stuff, and leave two cores for the OS to not shit itself
 #? in the case of the pc having less than two cores... buy a new pc
@@ -162,9 +179,9 @@ RUN bash /home/appuser/ros2_ws/.devcontainer/preinstall_vscode.sh $VSCODE_COMMIT
 RUN mkdir -p /home/appuser/ros2_ws/src/my_packages && \
     mkdir -p /home/appuser/ros2_ws/.vscode
 
+#Add the workspace
 USER appuser
 COPY --chown=appuser:appuser ./my_packages /home/appuser/ros2_ws/src/my_packages
-
 
 #build the workspace
 USER appuser
@@ -187,7 +204,7 @@ RUN cd /home/appuser/ros2_ws/src &&\
     chmod +x stockfish-ubuntu-x86-64-avx2 
 
 #get chess and stockfish
-RUN pip install python-chess stockfish --break-system-packages
+RUN pip install python-chess stockfish
 
 USER appuser
 

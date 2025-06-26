@@ -14,14 +14,17 @@ fi
 source "$PARAMS_FILE"
 
 # Get the host's group ID and VSCode commit hash
-HOST_USER_GROUP_ARG=$(id -g $USER)
 VSCODE_COMMIT_HASH=$(code --version | sed -n '2p')
 echo $VSCODE_COMMIT_HASH
 
+HOST_UID=$(id -u)
+HOST_GID=$(id -g)
+
 docker build \
-    --file Dockerfile \
-    --tag $image_name:$image_tag \
-    --build-arg HOST_USER_GROUP_ARG=$HOST_USER_GROUP_ARG \
-    --build-arg VSCODE_COMMIT_HASH=$VSCODE_COMMIT_HASH \
-    --build-arg ROS_DISTRO=$ROS_DISTRO \
-    ./..\
+   --file Dockerfile \
+   --tag $image_name:$image_tag \
+   --build-arg HOST_UID=$HOST_UID \
+   --build-arg HOST_GID=$HOST_GID \
+   --build-arg VSCODE_COMMIT_HASH=$VSCODE_COMMIT_HASH \
+   --build-arg ROS_DISTRO=$ROS_DISTRO \
+   ./..\
